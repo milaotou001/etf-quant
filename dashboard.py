@@ -38,7 +38,7 @@ def _col(df: pd.DataFrame, prefix: str) -> str:
 
 
 # ── 市场状态描述 ──
-def _market_state(row: pd.Series, df: pd.DataFrame) -> tuple:
+def _market_state(row: pd.Series, df: pd.DataFrame, rsi_buy_threshold: int = 35) -> tuple:
     """返回 (简单判断, 一句话总结)"""
     rsi = row["rsi"]
     adx_col = _col(df, "ADX")
@@ -50,24 +50,20 @@ def _market_state(row: pd.Series, df: pd.DataFrame) -> tuple:
     at_upper = bb_upper and row["close"] >= row[bb_upper] * 0.98
     in_trend = adx_val >= 25
 
-    # 简单判断 — RSI<35 黄金坑，投现金池1/3（最终策略）
-    if not pd.isna(rsi) and rsi < 35:
+    if not pd.isna(rsi) and rsi < rsi_buy_threshold:
         verdict = "便宜"
     elif not pd.isna(rsi) and rsi > 70:
         verdict = "贵"
     else:
         verdict = "正常"
 
-    # 一句话总结
     if pd.isna(rsi):
         return verdict, f"收盘 {row['close']:.4f}"
 
     if rsi < 25:
         flag = "极端超卖"
-    elif rsi < 30:
-        flag = "超卖"
-    elif rsi < 35:
-        flag = "偏弱(买入区间)"
+    elif rsi < rsi_buy_threshold:
+        flag = "超卖(买入区间)" if rsi_buy_threshold == 30 else "偏弱(买入区间)"
     elif rsi > 75:
         flag = "极端超买"
     elif rsi > 70:
@@ -84,7 +80,7 @@ def _market_state(row: pd.Series, df: pd.DataFrame) -> tuple:
 
 
 # ── 纪律提醒 ──
-def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy_fraction: str = "1/3") -> list[str]:
+def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy_fraction: str = "1/3", rsi_buy_threshold: int = 35) -> list[str]:
     """根据当前行情返回匹配的纪律提醒"""
     reminders = []
     rsi = row["rsi"]
@@ -94,14 +90,13 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy
     bb_lower = _col(df, "BBL")
     vol_ratio = row["volume"] / row["vol_ma20"] if row["vol_ma20"] > 0 else 1
 
-    # RSI 提醒 — 最终策略：RSI<35 黄金坑，投现金池1/3
     if not pd.isna(rsi):
-        if rsi < 35:
-            # 查距上次 RSI<35 信号多少天
+        if rsi < rsi_buy_threshold:
+            # 查距上次同类信号多少天
             prev_signal = None
             for i in range(len(df)-2, -1, -1):
                 pr = df['rsi'].iloc[i]
-                if not pd.isna(pr) and pr < 35:
+                if not pd.isna(pr) and pr < rsi_buy_threshold:
                     prev_signal = df.index[i]
                     break
 
@@ -118,9 +113,7 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy
 
             if rsi < 25:
                 reminders.append(f"RSI={rsi:.0f} 极端超卖 黄金坑 → 投现金池{buy_fraction} | {tag}")
-            elif rsi < 30:
-                reminders.append(f"RSI={rsi:.0f} 超卖区间 黄金坑 → 投现金池{buy_fraction} | {tag}")
-            else:
+            elif rsi < rsi_buy_threshold:
                 reminders.append(f"RSI={rsi:.0f} 买入区间 → 投现金池{buy_fraction} | {tag}")
 
             if days_since > 30 and prev_signal is not None:
@@ -162,10 +155,18 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy
 
     # ADX 提醒
     if not pd.isna(adx_val):
+        ma60 = row['ma60'] if 'ma60' in df.columns and not pd.isna(row['ma60']) else None
+        uptrend = ma60 and row['close'] > ma60
         if adx_val >= 40:
-            reminders.append(f"ADX={adx_val:.0f} — 极端趋势。RSI<35 信号需谨慎，可能趋势中钝化。")
+            if uptrend:
+                reminders.append(f"ADX={adx_val:.0f} — 极端强趋势上涨。持有不动，别追高。")
+            else:
+                reminders.append(f"ADX={adx_val:.0f} — 极端强趋势下跌。RSI 可能低位钝化，信号慎重。")
         elif adx_val >= 25:
-            reminders.append(f"ADX={adx_val:.0f} — 趋势市。注意：下跌趋势中 RSI<35 不是底，是趋势。")
+            if uptrend:
+                reminders.append(f"ADX={adx_val:.0f} — 趋势上涨中。回调再买，不追。")
+            else:
+                reminders.append(f"ADX={adx_val:.0f} — 趋势下跌中。RSI 低位不是底，是趋势，别接飞刀。")
 
     # 成交量异常
     if vol_ratio >= 2:
@@ -209,16 +210,8 @@ def show(df: pd.DataFrame, symbol: str = "563360", name: str = None,
     else:
         print(f"  正常 — 不动")
 
-    # ═══ 持仓信息（如有）═══
-    if entry_price is not None and entry_date is not None:
-        # 旧版兼容：entry_price 现为总成本, entry_date 不再使用
-        print()
-        print(f"  ── 持仓 ──")
-        # 需要份额才能算，这里保留旧逻辑但加提示
-        print(f"  请使用 Streamlit 网页版查看完整持仓信息")
-
     # ═══ 第二层：纪律提醒 ═══
-    reminders = _reminders(latest, df, has_position=(entry_price is not None))
+    reminders = _reminders(latest, df, has_position=False)
     if reminders:
         print()
         print(f"  ── 纪律提醒 ──")

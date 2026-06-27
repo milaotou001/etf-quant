@@ -9,9 +9,16 @@ import numpy as np
 from datetime import datetime, timedelta
 
 from data import load_data
-from dashboard import compute_indicators, get_indicator_row, _market_state, _reminders, _col
+from dashboard import compute_indicators, _market_state, _reminders
 from chart import build_figure
 from backtest import run_backtest
+
+ETF_NAMES = {"563360": "563360 A500 ETF",
+             "510300": "510300 沪深300 ETF",
+             "518880": "518880 黄金ETF",
+             "588000": "588000 科创50 ETF"}
+# 股票ETF RSI<35，黄金 RSI<30
+RSI_THRESHOLDS = {"563360": 35, "510300": 35, "518880": 30, "588000": 30}
 
 st.set_page_config(page_title="ETF 决策辅助", page_icon="📊", layout="wide")
 
@@ -22,15 +29,16 @@ df = load_data(symbol=symbol_cache, force_refresh=force_cache)
 df = compute_indicators(df)
 st.session_state["force"] = False
 
+rsi_buy = RSI_THRESHOLDS.get(symbol_cache, 35)
+
 # ── 侧边栏 ──
 with st.sidebar:
     st.title("ETF 决策辅助")
 
     symbol = st.selectbox(
-        "标的", ["563360", "510300"],
-        index=0 if symbol_cache == "563360" else 1,
-        format_func=lambda x: {"563360": "563360 A500 ETF",
-                               "510300": "510300 沪深300 ETF"}.get(x, x),
+        "标的", ["563360", "510300", "518880", "588000"],
+        index=({"563360": 0, "510300": 1, "518880": 2, "588000": 3}).get(symbol_cache, 0),
+        format_func=lambda x: ETF_NAMES.get(x, x),
         key="symbol")
 
     data_years = sorted(set(df.index.year))
@@ -58,25 +66,15 @@ with st.sidebar:
     st.divider()
     with st.expander("📋 策略规则", expanded=False):
         st.markdown("**买 入**")
-        st.markdown(f"RSI(14) &lt; 35 · 距上次信号 &gt; 30 天 · 投现金池 **{buy_fraction}**")
+        st.markdown(f"RSI(14) &lt; {rsi_buy} · 距上次信号 &gt; 30 天 · 投现金池 **{buy_fraction}**")
         st.markdown("**卖 出**")
         st.markdown("从买入后最高点回落 **15%** → 止损离场")
         st.markdown("**不 卖**")
         st.markdown("RSI &gt; 70 不是卖出理由（动量效应）")
         st.markdown("**现金池**")
-        st.markdown("30 万 + 每年 3 万 · 只在 RSI &lt; 35 时出手")
-
-    st.divider()
-    st.caption("持仓信息（可选）")
-    has_position = st.checkbox("我有持仓")
-    avg_cost = None
-    total_shares = None
-    if has_position:
-        avg_cost = st.number_input("持仓均价（元/份）", value=1.40, step=0.001, format="%.4f")
-        total_shares = st.number_input("总份额（份）", value=100000, step=1000)
+        st.markdown(f"30 万 + 每年 3 万 · 只在 RSI &lt; {rsi_buy} 时出手")
 
 # ── 当前数据 ──
-indicators = get_indicator_row(df)
 latest = df.iloc[-1]
 today_str = df.index[-1].strftime("%Y-%m-%d")
 
@@ -85,22 +83,7 @@ tab1, tab2 = st.tabs(["📊 决策面板", "📈 策略回溯"])
 
 # ──────────── Tab 1: 决策面板 ────────────
 with tab1:
-    col1, col2, col3, col4, col5 = st.columns(5)
-    verdict, summary = _market_state(latest, df)
-
-    col1.metric("收盘价", f"{latest['close']:.4f}")
-    col2.metric("涨跌幅", f"{latest['chg']:+.1f}%")
-    col3.metric("RSI (14)", f"{latest['rsi']:.0f}",
-                delta="黄金坑" if latest['rsi'] < 35 else ("超买" if latest['rsi'] > 70 else None),
-                delta_color="off" if latest['rsi'] >= 35 and latest['rsi'] <= 70 else "normal")
-    adx_col = _col(df, "ADX")
-    adx_val = latest[adx_col] if adx_col else 0
-    col4.metric("ADX (14)", f"{adx_val:.0f}",
-                delta="趋势" if adx_val >= 25 else ("方向形成中" if adx_val >= 20 else None),
-                delta_color="off")
-    col5.metric("MA60", f"{latest['ma60']:.4f}",
-                delta="线下" if latest['close'] < latest['ma60'] else "线上",
-                delta_color="off" if latest['close'] >= latest['ma60'] else "inverse")
+    verdict, summary = _market_state(latest, df, rsi_buy_threshold=rsi_buy)
 
     st.divider()
     if verdict == "便宜":
@@ -112,25 +95,7 @@ with tab1:
     else:
         st.info(f"**{summary}**  — 正常，不动")
 
-    if has_position and avg_cost and total_shares and total_shares > 0:
-        total_cost = avg_cost * total_shares
-        current_val = latest["close"] * total_shares
-        pnl_pct = (latest["close"] / avg_cost - 1) * 100
-        pnl_abs = current_val - total_cost
-
-        # 15% 回落止损：用近期最高点
-        recent = df.iloc[-252:] if len(df) >= 252 else df
-        peak = recent['close'].max()
-        stop_price = peak * 0.85
-        dist_to_stop = (latest["close"] / stop_price - 1) * 100
-
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("持仓市值", f"{current_val/10000:.2f}万", delta=f"{pnl_abs:+.0f}元")
-        c2.metric("当前盈亏", f"{pnl_pct:+.1f}%")
-        c3.metric("均价", f"{avg_cost:.4f}")
-        c4.metric("止损线(15%)", f"{stop_price:.4f}", delta=f"{dist_to_stop:+.1f}%")
-
-    reminders = _reminders(latest, df, has_position=(has_position and avg_cost and avg_cost > 0), buy_fraction=buy_fraction)
+    reminders = _reminders(latest, df, has_position=False, buy_fraction=buy_fraction, rsi_buy_threshold=rsi_buy)
     if reminders:
         st.divider()
         st.subheader("纪律提醒")
@@ -176,4 +141,4 @@ with tab2:
     st.dataframe(rdf, use_container_width=True, hide_index=True)
 
     st.divider()
-    st.caption("策略解读：定投为底 + RSI<35黄金坑投现金池1/3 + RSI>70不卖。不回测已证明：单纯择时跑不赢定投，但有大笔现金时RSI<35分批买入提升资金效率。")
+    st.caption("策略解读：定投为底 + RSI黄金坑投现金池1/3 + RSI>70不卖。不回测已证明：单纯择时跑不赢定投，但有大笔现金时RSI低位分批买入提升资金效率。")

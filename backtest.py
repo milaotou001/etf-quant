@@ -1,7 +1,7 @@
 """RSI<30买入后不同止盈策略回测"""
 import pandas as pd
-import pandas_ta as ta
 import numpy as np
+from indicators import sma, rsi
 
 
 def sim_rsi_target(df, buy_idx, target):
@@ -37,7 +37,7 @@ def sim_ma_cross(df, buy_idx, ma_len):
     entry = df.iloc[buy_idx]['close']
     ma_col = f'ma_{ma_len}'
     if ma_col not in df.columns:
-        df[ma_col] = ta.sma(df['close'], length=ma_len)
+        df[ma_col] = sma(df['close'], ma_len)
     for i in range(buy_idx + 1, len(df)):
         if df.iloc[i]['close'] < df[ma_col].iloc[i]:
             return (df.iloc[i]['close'] / entry - 1) * 100, (df.index[i] - df.index[buy_idx]).days
@@ -48,7 +48,7 @@ def run_backtest(df, buy_condition='rsi30'):
     """运行全部止盈策略回测，返回 (DataFrame, 条件标签, 信号次数)"""
     df = df.copy()
     if 'rsi' not in df.columns:
-        df['rsi'] = ta.rsi(df['close'], length=14)
+        df['rsi'] = rsi(df['close'], 14)
 
     if buy_condition == 'rsi35':
         buy_dates = df.index[df['rsi'] < 35]

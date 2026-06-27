@@ -3,5 +3,4 @@ pandas
 numpy
 matplotlib
 mplfinance
-pandas-ta
 akshare

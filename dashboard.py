@@ -1,29 +1,29 @@
 """市场状态面板 + 不做清单纪律提醒"""
 import pandas as pd
-import pandas_ta as ta
 import numpy as np
 from datetime import datetime
+from indicators import sma, rsi, macd, bbands, adx
 
 
 def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """计算全部技术指标，返回带指标列的 DataFrame"""
     df = df.copy()
-    df["ma5"] = ta.sma(df["close"], length=5)
-    df["ma10"] = ta.sma(df["close"], length=10)
-    df["ma20"] = ta.sma(df["close"], length=20)
-    df["ma60"] = ta.sma(df["close"], length=60)
-    df["rsi"] = ta.rsi(df["close"], length=14)
+    df["ma5"] = sma(df["close"], 5)
+    df["ma10"] = sma(df["close"], 10)
+    df["ma20"] = sma(df["close"], 20)
+    df["ma60"] = sma(df["close"], 60)
+    df["rsi"] = rsi(df["close"], 14)
 
-    macd = ta.macd(df["close"], fast=12, slow=26, signal=9)
-    df = pd.concat([df, macd], axis=1)
+    macd_df = macd(df["close"])
+    df = pd.concat([df, macd_df], axis=1)
 
-    bb = ta.bbands(df["close"], length=20, std=2)
-    df = pd.concat([df, bb], axis=1)
+    bb_df = bbands(df["close"])
+    df = pd.concat([df, bb_df], axis=1)
 
-    adx_df = ta.adx(df["high"], df["low"], df["close"], length=14)
+    adx_df = adx(df["high"], df["low"], df["close"])
     df = pd.concat([df, adx_df], axis=1)
 
-    df["vol_ma20"] = ta.sma(df["volume"], length=20)
+    df["vol_ma20"] = sma(df["volume"], 20)
     df["chg"] = df["close"].pct_change() * 100
 
     return df

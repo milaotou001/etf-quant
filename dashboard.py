@@ -84,7 +84,7 @@ def _market_state(row: pd.Series, df: pd.DataFrame) -> tuple:
 
 
 # ── 纪律提醒 ──
-def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False) -> list[str]:
+def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy_fraction: str = "1/3") -> list[str]:
     """根据当前行情返回匹配的纪律提醒"""
     reminders = []
     rsi = row["rsi"]
@@ -117,11 +117,11 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False) -> 
                 tag = f"[同一波段 距上次仅{days_since}天 不操作]"
 
             if rsi < 25:
-                reminders.append(f"RSI={rsi:.0f} 极端超卖 黄金坑 → 投现金池1/3 | {tag}")
+                reminders.append(f"RSI={rsi:.0f} 极端超卖 黄金坑 → 投现金池{buy_fraction} | {tag}")
             elif rsi < 30:
-                reminders.append(f"RSI={rsi:.0f} 超卖区间 黄金坑 → 投现金池1/3 | {tag}")
+                reminders.append(f"RSI={rsi:.0f} 超卖区间 黄金坑 → 投现金池{buy_fraction} | {tag}")
             else:
-                reminders.append(f"RSI={rsi:.0f} 买入区间 → 投现金池1/3 | {tag}")
+                reminders.append(f"RSI={rsi:.0f} 买入区间 → 投现金池{buy_fraction} | {tag}")
 
             if days_since > 30 and prev_signal is not None:
                 reminders.append(f"  上次信号: {prev_signal.strftime('%Y-%m-%d')} (距今天 {days_since} 天)")

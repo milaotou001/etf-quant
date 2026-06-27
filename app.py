@@ -47,6 +47,15 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
+    st.caption("市场模式")
+    market_mode = st.radio(
+        "当前判断",
+        ["bull", "bear"],
+        format_func=lambda x: "牛市/震荡 → 投 1/3" if x == "bull" else "熊市 → 投 1/5",
+        key="market_mode")
+    buy_fraction = "1/3" if market_mode == "bull" else "1/5"
+
+    st.divider()
     st.caption("持仓信息（可选）")
     has_position = st.checkbox("我有持仓")
     entry_price = None
@@ -84,7 +93,7 @@ with tab1:
     st.divider()
     if verdict == "便宜":
         st.success(f"**{summary}**")
-        st.info(">>> 黄金坑 — 投现金池的 1/3 <<<")
+        st.info(f">>> 黄金坑 — 投现金池的 {buy_fraction} <<<")
     elif verdict == "贵":
         st.warning(f"**{summary}**")
         st.info(">>> 偏贵 — 持有不动，不加仓（RSI>70后动量强，卖=踏空）<<<")
@@ -107,7 +116,7 @@ with tab1:
             c3.metric("时间止损", "已到期 ⚠")
         c4.metric("持有天数", str(hold_days))
 
-    reminders = _reminders(latest, df, has_position=(has_position and entry_price is not None))
+    reminders = _reminders(latest, df, has_position=(has_position and entry_price is not None), buy_fraction=buy_fraction)
     if reminders:
         st.divider()
         st.subheader("纪律提醒")

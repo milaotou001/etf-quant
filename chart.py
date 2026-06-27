@@ -9,7 +9,7 @@ from datetime import datetime
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 import matplotlib.font_manager as fm
-for fname in ["Microsoft YaHei", "SimHei"]:
+for fname in ["Microsoft YaHei", "SimHei", "WenQuanYi Zen Hei", "Noto Sans CJK SC", "DejaVu Sans"]:
     try:
         fm.findfont(fname, fallback_to_default=False)
         plt.rcParams["font.sans-serif"] = [fname, "DejaVu Sans"]

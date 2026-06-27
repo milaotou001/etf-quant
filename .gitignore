@@ -3,6 +3,7 @@ __pycache__/
 cache/
 output/
 _*.py
+_msg.txt
 exit_test.py
 indicator_check.py
 param_tune.py

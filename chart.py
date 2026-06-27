@@ -9,13 +9,30 @@ from datetime import datetime
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 import matplotlib.font_manager as fm
-for fname in ["Microsoft YaHei", "SimHei", "WenQuanYi Zen Hei", "Noto Sans CJK SC", "DejaVu Sans"]:
+
+# 清除 matplotlib 字体缓存（确保新安装的字体被识别）
+import glob as _glob
+_cache_dir = fm.get_cachedir()
+if os.path.exists(_cache_dir):
+    for _f in _glob.glob(os.path.join(_cache_dir, "fontlist*.json")):
+        try:
+            os.remove(_f)
+        except Exception:
+            pass
+fm._load_fontmanager(try_read_cache=False)
+
+_font_found = False
+for fname in ["WenQuanYi Zen Hei", "WenQuanYi Micro Hei", "Noto Sans CJK SC",
+              "Microsoft YaHei", "SimHei", "DejaVu Sans"]:
     try:
         fm.findfont(fname, fallback_to_default=False)
         plt.rcParams["font.sans-serif"] = [fname, "DejaVu Sans"]
+        _font_found = True
         break
     except Exception:
         continue
+if not _font_found:
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 

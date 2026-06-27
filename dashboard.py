@@ -200,27 +200,11 @@ def show(df: pd.DataFrame, symbol: str = "563360", name: str = None,
 
     # ═══ 持仓信息（如有）═══
     if entry_price is not None and entry_date is not None:
+        # 旧版兼容：entry_price 现为总成本, entry_date 不再使用
         print()
         print(f"  ── 持仓 ──")
-        pnl_pct = (latest["close"] / entry_price - 1) * 100
-        hold_days = (df.index[-1] - pd.to_datetime(entry_date)).days
-
-        # 找买入以来最高点，算回落
-        bought_idx = df.index.get_loc(pd.to_datetime(entry_date))
-        held = df.iloc[bought_idx:]
-        peak = held['close'].max()
-        pullback = (latest['close'] / peak - 1) * 100
-        stop_price_15pct = peak * 0.85
-
-        pnl_flag = "+" if pnl_pct >= 0 else ""
-        print(f"  买入价 {entry_price:.4f} | 买入日 {entry_date} | 持有 {hold_days} 天")
-        print(f"  当前盈亏 {pnl_flag}{pnl_pct:.1f}%")
-        print(f"  买入以来最高 {peak:.4f} | 当前距高点 {pullback:+.1f}%")
-        print(f"  回落15%止损线: {stop_price_15pct:.4f} ({(latest['close']/stop_price_15pct-1)*100:+.1f}%)")
-        if pullback <= -15:
-            print(f"  !!! 已触及15%止损线，立即卖出 !!!")
-        elif pullback <= -10:
-            print(f"  ⚠ 接近止损线，注意风险")
+        # 需要份额才能算，这里保留旧逻辑但加提示
+        print(f"  请使用 Streamlit 网页版查看完整持仓信息")
 
     # ═══ 第二层：纪律提醒 ═══
     reminders = _reminders(latest, df, has_position=(entry_price is not None))

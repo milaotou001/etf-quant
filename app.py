@@ -57,22 +57,23 @@ with st.sidebar:
 
     st.divider()
     with st.expander("📋 策略规则", expanded=False):
-        st.markdown(f"""
-        **买入**：RSI(14) < 35，距上次信号 > 30天 → 投现金池的 **{buy_fraction}**
-        **卖出**：从买入后最高点回落 **15%** → 止损卖出
-        **不卖**：RSI > 70 不是卖出理由（动量效应）
-        **现金池**：30万 + 每年注入 3万，只在 RSI<35 时出手
-        """)
+        st.markdown("**买 入**")
+        st.markdown(f"RSI(14) &lt; 35 · 距上次信号 &gt; 30 天 · 投现金池 **{buy_fraction}**")
+        st.markdown("**卖 出**")
+        st.markdown("从买入后最高点回落 **15%** → 止损离场")
+        st.markdown("**不 卖**")
+        st.markdown("RSI &gt; 70 不是卖出理由（动量效应）")
+        st.markdown("**现金池**")
+        st.markdown("30 万 + 每年 3 万 · 只在 RSI &lt; 35 时出手")
 
     st.divider()
     st.caption("持仓信息（可选）")
     has_position = st.checkbox("我有持仓")
-    entry_price = None
-    entry_date = None
+    total_cost = None
+    total_shares = None
     if has_position:
-        entry_price = st.number_input("买入价", value=1.40, step=0.001, format="%.4f")
-        entry_date = st.date_input("买入日期", value=datetime.now() - timedelta(days=7),
-                                   max_value=datetime.now())
+        total_cost = st.number_input("总持仓成本（元）", value=135000, step=1000)
+        total_shares = st.number_input("总份额（份）", value=0, step=100)
 
 # ── 当前数据 ──
 indicators = get_indicator_row(df)
@@ -109,23 +110,26 @@ with tab1:
     else:
         st.info(f"**{summary}**  — 正常，不动")
 
-    if has_position and entry_price and entry_date:
-        pnl_pct = (latest["close"] / entry_price - 1) * 100
-        stop_price = entry_price * 0.95
+    if has_position and total_cost and total_shares and total_shares > 0:
+        avg_cost = total_cost / total_shares
+        current_val = latest["close"] * total_shares
+        pnl_pct = (latest["close"] / avg_cost - 1) * 100
+        pnl_abs = current_val - total_cost
+
+        # 15% 回落止损：用近期最高点
+        recent = df.iloc[-252:] if len(df) >= 252 else df
+        peak = recent['close'].max()
+        stop_price = peak * 0.85
         dist_to_stop = (latest["close"] / stop_price - 1) * 100
-        hold_days = (df.index[-1] - pd.to_datetime(entry_date)).days
-        time_left = max(0, 7 - hold_days)
+        from_peak = (latest["close"] / peak - 1) * 100
 
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("当前盈亏", f"{pnl_pct:+.1f}%")
-        c2.metric("止损线", f"{stop_price:.4f}", f"距当前 {dist_to_stop:+.1f}%")
-        if time_left > 0:
-            c3.metric("时间止损", f"剩余 {time_left} 天")
-        else:
-            c3.metric("时间止损", "已到期 ⚠")
-        c4.metric("持有天数", str(hold_days))
+        c1.metric("持仓市值", f"{current_val/10000:.2f}万", delta=f"{pnl_abs:+.0f}元")
+        c2.metric("当前盈亏", f"{pnl_pct:+.1f}%")
+        c3.metric("年均价", f"{avg_cost:.4f}")
+        c4.metric("止损线(15%)", f"{stop_price:.4f}", delta=f"{dist_to_stop:+.1f}%")
 
-    reminders = _reminders(latest, df, has_position=(has_position and entry_price is not None), buy_fraction=buy_fraction)
+    reminders = _reminders(latest, df, has_position=(has_position and total_cost and total_cost > 0), buy_fraction=buy_fraction)
     if reminders:
         st.divider()
         st.subheader("纪律提醒")

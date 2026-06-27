@@ -56,6 +56,15 @@ with st.sidebar:
     buy_fraction = "1/3" if market_mode == "bull" else "1/5"
 
     st.divider()
+    with st.expander("📋 策略规则", expanded=False):
+        st.markdown(f"""
+        **买入**：RSI(14) < 35，距上次信号 > 30天 → 投现金池的 **{buy_fraction}**
+        **卖出**：从买入后最高点回落 **15%** → 止损卖出
+        **不卖**：RSI > 70 不是卖出理由（动量效应）
+        **定投**：每月 2,500 照常投入，不受信号影响
+        """)
+
+    st.divider()
     st.caption("持仓信息（可选）")
     has_position = st.checkbox("我有持仓")
     entry_price = None

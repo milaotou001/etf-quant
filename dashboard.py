@@ -130,6 +130,19 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy
         elif rsi > 70:
             reminders.append("RSI > 70 — 偏贵。持有不动，不加仓。不卖——动量效应下卖了容易踏空。")
 
+    # 持仓止损提醒：回落15%铁律
+    if has_position:
+        # 找买入以来最高点
+        if len(df) >= 2:
+            recent = df.iloc[-60:] if len(df) >= 60 else df  # 最近60天
+            peak = recent['close'].max()
+            current = row['close']
+            pullback = (current / peak - 1) * 100
+            if pullback <= -15:
+                reminders.append(f"!!! 止损触发：从高点{peak:.4f}已回落{pullback:.1f}%，触及15%止损线，立即卖出！")
+            elif pullback <= -10:
+                reminders.append(f"⚠ 注意：从高点{peak:.4f}已回落{pullback:.1f}%，接近15%止损线。")
+
     # 布林带提醒
     if bb_upper and row["close"] >= row[bb_upper] * 0.99:
         reminders.append("价格在布林上轨 — 偏贵，不加仓。")
@@ -190,18 +203,24 @@ def show(df: pd.DataFrame, symbol: str = "563360", name: str = None,
         print()
         print(f"  ── 持仓 ──")
         pnl_pct = (latest["close"] / entry_price - 1) * 100
-        stop_price = entry_price * 0.95
-        dist_to_stop = (latest["close"] / stop_price - 1) * 100
         hold_days = (df.index[-1] - pd.to_datetime(entry_date)).days
-        time_left = max(0, 7 - hold_days)
+
+        # 找买入以来最高点，算回落
+        bought_idx = df.index.get_loc(pd.to_datetime(entry_date))
+        held = df.iloc[bought_idx:]
+        peak = held['close'].max()
+        pullback = (latest['close'] / peak - 1) * 100
+        stop_price_15pct = peak * 0.85
 
         pnl_flag = "+" if pnl_pct >= 0 else ""
-        print(f"  买入价 {entry_price:.4f} | 买入日 {entry_date}")
-        print(f"  当前盈亏 {pnl_flag}{pnl_pct:.1f}% | 止损线 {stop_price:.4f} (距当前 {dist_to_stop:+.1f}%)")
-        if time_left > 0:
-            print(f"  时间止损剩余 {time_left} 个交易日")
-        else:
-            print(f"  ⚠ 时间止损已到期 ({hold_days}天)，建议评估是否离场")
+        print(f"  买入价 {entry_price:.4f} | 买入日 {entry_date} | 持有 {hold_days} 天")
+        print(f"  当前盈亏 {pnl_flag}{pnl_pct:.1f}%")
+        print(f"  买入以来最高 {peak:.4f} | 当前距高点 {pullback:+.1f}%")
+        print(f"  回落15%止损线: {stop_price_15pct:.4f} ({(latest['close']/stop_price_15pct-1)*100:+.1f}%)")
+        if pullback <= -15:
+            print(f"  !!! 已触及15%止损线，立即卖出 !!!")
+        elif pullback <= -10:
+            print(f"  ⚠ 接近止损线，注意风险")
 
     # ═══ 第二层：纪律提醒 ═══
     reminders = _reminders(latest, df, has_position=(entry_price is not None))

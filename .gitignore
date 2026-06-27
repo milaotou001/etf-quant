@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+cache/
+output/
+_*.py
+exit_test.py
+indicator_check.py
+param_tune.py
+validate.py
+winrate.py

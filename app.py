@@ -69,11 +69,11 @@ with st.sidebar:
     st.divider()
     st.caption("持仓信息（可选）")
     has_position = st.checkbox("我有持仓")
-    total_cost = None
+    avg_cost = None
     total_shares = None
     if has_position:
-        total_cost = st.number_input("总持仓成本（元）", value=135000, step=1000)
-        total_shares = st.number_input("总份额（份）", value=0, step=100)
+        avg_cost = st.number_input("持仓均价（元/份）", value=1.40, step=0.001, format="%.4f")
+        total_shares = st.number_input("总份额（份）", value=100000, step=1000)
 
 # ── 当前数据 ──
 indicators = get_indicator_row(df)
@@ -98,7 +98,9 @@ with tab1:
     col4.metric("ADX (14)", f"{adx_val:.0f}",
                 delta="趋势" if adx_val >= 25 else ("方向形成中" if adx_val >= 20 else None),
                 delta_color="off")
-    col5.metric("MA20", f"{latest['ma20']:.4f}")
+    col5.metric("MA60", f"{latest['ma60']:.4f}",
+                delta="线下" if latest['close'] < latest['ma60'] else "线上",
+                delta_color="off" if latest['close'] >= latest['ma60'] else "inverse")
 
     st.divider()
     if verdict == "便宜":
@@ -110,8 +112,8 @@ with tab1:
     else:
         st.info(f"**{summary}**  — 正常，不动")
 
-    if has_position and total_cost and total_shares and total_shares > 0:
-        avg_cost = total_cost / total_shares
+    if has_position and avg_cost and total_shares and total_shares > 0:
+        total_cost = avg_cost * total_shares
         current_val = latest["close"] * total_shares
         pnl_pct = (latest["close"] / avg_cost - 1) * 100
         pnl_abs = current_val - total_cost
@@ -121,15 +123,14 @@ with tab1:
         peak = recent['close'].max()
         stop_price = peak * 0.85
         dist_to_stop = (latest["close"] / stop_price - 1) * 100
-        from_peak = (latest["close"] / peak - 1) * 100
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("持仓市值", f"{current_val/10000:.2f}万", delta=f"{pnl_abs:+.0f}元")
         c2.metric("当前盈亏", f"{pnl_pct:+.1f}%")
-        c3.metric("年均价", f"{avg_cost:.4f}")
+        c3.metric("均价", f"{avg_cost:.4f}")
         c4.metric("止损线(15%)", f"{stop_price:.4f}", delta=f"{dist_to_stop:+.1f}%")
 
-    reminders = _reminders(latest, df, has_position=(has_position and total_cost and total_cost > 0), buy_fraction=buy_fraction)
+    reminders = _reminders(latest, df, has_position=(has_position and avg_cost and avg_cost > 0), buy_fraction=buy_fraction)
     if reminders:
         st.divider()
         st.subheader("纪律提醒")

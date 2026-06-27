@@ -149,6 +149,17 @@ def _reminders(row: pd.Series, df: pd.DataFrame, has_position: bool = False, buy
     if bb_lower and row["close"] <= row[bb_lower] * 1.01:
         reminders.append("价格在布林下轨 — 便宜，可以关注买入机会。")
 
+    # MA60 趋势提醒 — 跌破不自动卖，提示关注
+    ma60_val = row['ma60'] if 'ma60' in df.columns and not pd.isna(row['ma60']) else None
+    if ma60_val and row['close'] < ma60_val:
+        # 检查是否刚跌破（昨天还在线上）
+        prev_close = df['close'].iloc[-2] if len(df) >= 2 else None
+        prev_ma60 = df['ma60'].iloc[-2] if len(df) >= 2 and 'ma60' in df.columns else None
+        if prev_close is not None and prev_ma60 is not None and prev_close >= prev_ma60:
+            reminders.append(f"⚠ 今日跌破 MA60 ({ma60_val:.4f}) — 趋势可能走坏，关注后续走势")
+        else:
+            reminders.append(f"价格在 MA60 ({ma60_val:.4f}) 下方 — 趋势偏弱，保持关注")
+
     # ADX 提醒
     if not pd.isna(adx_val):
         if adx_val >= 40:

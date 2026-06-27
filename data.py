@@ -38,5 +38,6 @@ def load_data(symbol: str = "563360", force_refresh: bool = False) -> pd.DataFra
                 return df
 
     df = fetch_klines(symbol)
+    os.makedirs(CACHE_DIR, exist_ok=True)
     df.to_csv(cache_path)
     return df

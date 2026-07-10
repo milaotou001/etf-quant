@@ -9,3 +9,8 @@ indicator_check.py
 param_tune.py
 validate.py
 winrate.py
+streamlit*.log
+journal/
+private_data/
+yfinance.cache
+普通账户电子对账单.xlsx

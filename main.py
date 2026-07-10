@@ -14,6 +14,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 from data import load_data
 from dashboard import show, compute_indicators, get_indicator_row
 from chart import draw
+from instruments import get_instrument, list_instruments
 
 
 def main():
@@ -28,12 +29,12 @@ def main():
   .venv\\Scripts\\python.exe main.py --days 180            # 半年窗口
   .venv\\Scripts\\python.exe main.py --no-plot             # 只看面板不画图
   .venv\\Scripts\\python.exe main.py --force-refresh       # 强制刷新数据
-  .venv\\Scripts\\python.exe main.py --entry-price 1.385 --entry-date 2026-06-20
         """,
     )
 
-    parser.add_argument("--symbol", type=str, default="563360",
-                        help="ETF代码 (默认: 563360)")
+    supported_symbols = [spec.symbol for spec in list_instruments()]
+    parser.add_argument("--symbol", type=str, default="563360", choices=supported_symbols,
+                        help="标的代码 (默认: 563360)")
     parser.add_argument("--name", type=str, default=None,
                         help="显示名称 (默认: 自动使用代码)")
     parser.add_argument("--days", type=int, default=90,
@@ -42,25 +43,20 @@ def main():
                         help="跳过图表生成")
     parser.add_argument("--force-refresh", action="store_true",
                         help="强制从网络刷新数据")
-    parser.add_argument("--entry-price", type=float, default=None,
-                        help="持仓买入价")
-    parser.add_argument("--entry-date", type=str, default=None,
-                        help="持仓买入日期 (YYYY-MM-DD)")
-
     args = parser.parse_args()
-    name = args.name or args.symbol
+    instrument = get_instrument(args.symbol)
+    name = args.name or instrument.name
 
     # 1. 数据
     df = load_data(symbol=args.symbol, force_refresh=args.force_refresh)
 
     # 2. 终端面板
-    show(df, symbol=args.symbol, name=name,
-         entry_price=args.entry_price, entry_date=args.entry_date)
+    show(df, symbol=args.symbol, name=name)
 
     # 3. 图表
     if not args.no_plot:
         print()
-        df = compute_indicators(df)
+        df = compute_indicators(df, instrument)
         indicators = get_indicator_row(df)
         draw(df, indicators, symbol=args.symbol, name=name, days=args.days)
         print()

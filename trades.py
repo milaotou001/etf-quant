@@ -7,6 +7,12 @@ import numpy as np
 
 PRIVATE_DATA_DIR = os.path.join(os.path.dirname(__file__), "private_data")
 TRADE_CACHE_PATH = os.path.join(PRIVATE_DATA_DIR, "trades.json")
+ACCOUNT_SNAPSHOT_PATH = os.path.join(PRIVATE_DATA_DIR, "account_snapshot.json")
+
+_STATEMENT_COLUMNS = [
+    "日期", "币种", "股东账号", "证券代码", "证券名称", "摘要", "成交数量", "成交均价",
+    "佣金", "印花税", "其他费", "发生金额", "资金余额",
+]
 
 # Excel 中的证券代码 → 项目 ETF 代码映射
 _SYMBOL_MAP = {
@@ -19,22 +25,30 @@ _SYMBOL_MAP = {
 }
 
 
-def parse_trade_dataframe(df: pd.DataFrame) -> dict:
-    """解析已上传到内存的电子对账单，不保存原始文件。"""
-    header_row = None
+def _find_statement_header(df: pd.DataFrame) -> int | None:
     for i in range(len(df)):
         row_vals = [str(x) for x in df.iloc[i] if str(x) != "nan"]
         if "日期" in row_vals and "摘要" in row_vals and "成交数量" in row_vals:
-            header_row = i
-            break
+            return i
+    return None
 
+
+def _statement_rows(df: pd.DataFrame) -> pd.DataFrame:
+    header_row = _find_statement_header(df)
     if header_row is None:
-        return {}
-
-    cols = ["日期", "币种", "股东账号", "证券代码", "证券名称", "摘要",
-            "成交数量", "成交均价", "佣金", "印花税", "其他费", "发生金额", "资金余额"]
+        return pd.DataFrame(columns=_STATEMENT_COLUMNS)
     tx = df.iloc[header_row + 1:].copy()
-    tx.columns = cols
+    if tx.shape[1] != len(_STATEMENT_COLUMNS):
+        return pd.DataFrame(columns=_STATEMENT_COLUMNS)
+    tx.columns = _STATEMENT_COLUMNS
+    return tx
+
+
+def parse_trade_dataframe(df: pd.DataFrame) -> dict:
+    """解析已上传到内存的电子对账单，不保存原始文件。"""
+    tx = _statement_rows(df)
+    if tx.empty:
+        return {}
     tx = tx[tx["日期"].notna() & (tx["日期"].astype(str).str.match(r"^\d{8}$"))].copy()
 
     for c in ["成交数量", "成交均价"]:
@@ -77,6 +91,27 @@ def parse_trade_dataframe(df: pd.DataFrame) -> dict:
             entries.append({"date": t["日期"], "type": "sell_profit" if is_profit else "sell_loss", "price": t["成交均价"], "qty": int(t["成交数量"]), "amount": t["成交金额"]})
         result[_SYMBOL_MAP[code]] = entries
     return result
+
+
+def extract_account_snapshot(df: pd.DataFrame) -> dict:
+    """Extract the latest valid statement cash balance without retaining the workbook."""
+    tx = _statement_rows(df)
+    if tx.empty:
+        return {}
+    tx = tx[tx["日期"].notna() & tx["日期"].astype(str).str.match(r"^\d{8}$")].copy()
+    tx["资金余额"] = pd.to_numeric(tx["资金余额"], errors="coerce")
+    tx = tx[tx["资金余额"].notna()].copy()
+    if tx.empty:
+        return {}
+    tx["_date"] = pd.to_datetime(tx["日期"], format="%Y%m%d", errors="coerce")
+    tx = tx[tx["_date"].notna()].sort_values("_date")
+    if tx.empty:
+        return {}
+    latest = tx.iloc[-1]
+    return {
+        "cash_balance": float(latest["资金余额"]),
+        "cash_date": latest["_date"].strftime("%Y-%m-%d"),
+    }
 
 
 def parse_statement(uploaded_file) -> dict:
@@ -132,12 +167,40 @@ def load_trade_cache(path: str = TRADE_CACHE_PATH) -> dict:
     return result
 
 
-def update_trade_cache(uploaded_file, path: str = TRADE_CACHE_PATH) -> dict:
+def save_account_snapshot(snapshot: dict, path: str = ACCOUNT_SNAPSHOT_PATH) -> None:
+    parent = os.path.dirname(os.path.abspath(path))
+    os.makedirs(parent, exist_ok=True)
+    temp_path = f"{path}.tmp"
+    with open(temp_path, "w", encoding="utf-8") as handle:
+        json.dump(snapshot or {}, handle, ensure_ascii=False, indent=2)
+    os.replace(temp_path, path)
+
+
+def load_account_snapshot(path: str = ACCOUNT_SNAPSHOT_PATH) -> dict:
+    if not path or not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def update_trade_cache(
+    uploaded_file,
+    path: str = TRADE_CACHE_PATH,
+    snapshot_path: str = ACCOUNT_SNAPSHOT_PATH,
+) -> dict:
     """Parse a newly uploaded statement and replace the cached parsed records."""
-    parsed = parse_statement(uploaded_file)
+    df = pd.read_excel(uploaded_file, sheet_name="Sheet1", header=None)
+    parsed = parse_trade_dataframe(df)
     if not parsed:
         raise ValueError("未识别到受支持的交易记录，原缓存未改变")
     save_trade_cache(parsed, path)
+    snapshot = extract_account_snapshot(df)
+    if snapshot:
+        save_account_snapshot(snapshot, snapshot_path)
     return parsed
 
 

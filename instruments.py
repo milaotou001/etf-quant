@@ -13,6 +13,15 @@ class InstrumentSpec:
     rsi_second_entry: int | None = None
     rsi_confirmation: int | None = None
     requires_verified_amount: bool = False
+    is_focus: bool = False
+
+    @property
+    def display_tier(self) -> str:
+        if self.is_core:
+            return "核心"
+        if self.is_focus:
+            return "重点"
+        return "观察"
 
     @property
     def supports_campaign(self) -> bool:
@@ -30,6 +39,11 @@ _INSTRUMENTS = (
     InstrumentSpec("510300", "沪深300 ETF", "CN", "宽基股票 ETF", True, 40, 35, 40, True),
     InstrumentSpec("518880", "黄金 ETF", "CN", "黄金 ETF", True, 35, 30, 40, True),
     InstrumentSpec("588000", "科创50 ETF", "CN", "高波动科技 ETF", True, 30, 25, 40, True),
+    InstrumentSpec("561380", "电网设备 ETF", "CN", "重点观察", False, is_focus=True),
+    InstrumentSpec("516150", "稀土 ETF", "CN", "重点观察", False, is_focus=True),
+    InstrumentSpec("159570", "港股创新药 ETF", "CN", "重点观察", False, is_focus=True),
+    InstrumentSpec("159995", "芯片 ETF", "CN", "实验观察", False),
+    InstrumentSpec("159819", "人工智能 ETF", "CN", "实验观察", False),
     InstrumentSpec("513180", "恒生科技", "HK", "实验观察", False),
     InstrumentSpec("159920", "恒生 ETF", "HK", "实验观察", False),
     InstrumentSpec("HSI", "恒生指数", "HK", "实验观察", False),

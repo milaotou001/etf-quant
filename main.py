@@ -15,6 +15,7 @@ from data import load_data
 from dashboard import show, compute_indicators, get_indicator_row
 from chart import draw
 from instruments import get_instrument, list_instruments
+from etf_shares import SHARE_OBSERVATION_ENABLED, load_share_observation
 
 
 def main():
@@ -50,8 +51,24 @@ def main():
     # 1. 数据
     df = load_data(symbol=args.symbol, force_refresh=args.force_refresh)
 
+    share_observation = None
+    if SHARE_OBSERVATION_ENABLED:
+        try:
+            share_observation = load_share_observation(
+                args.symbol,
+                df.index,
+                force_refresh=args.force_refresh,
+            )
+        except Exception as exc:
+            print(f"ETF 份额观察暂不可用：{exc}")
+
     # 2. 终端面板
-    show(df, symbol=args.symbol, name=name)
+    show(
+        df,
+        symbol=args.symbol,
+        name=name,
+        share_observation=share_observation,
+    )
 
     # 3. 图表
     if not args.no_plot:

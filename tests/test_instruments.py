@@ -37,6 +37,40 @@ class InstrumentRegistryTests(unittest.TestCase):
             self.assertIsNone(spec.rsi_first_entry)
             self.assertIsNone(spec.rsi_second_entry)
 
+    def test_personal_holdings_are_available_as_experimental_observations(self):
+        expected = {
+            "159995": "芯片 ETF",
+            "159819": "人工智能 ETF",
+        }
+        for symbol, name in expected.items():
+            spec = get_instrument(symbol)
+            self.assertEqual(spec.name, name)
+            self.assertEqual(spec.market, "CN")
+            self.assertFalse(spec.is_core)
+            self.assertFalse(spec.supports_campaign)
+            self.assertFalse(spec.supports_backtest)
+            self.assertIn(spec, list_instruments(include_experimental=True))
+
+    def test_focus_watchlist_symbols_are_labeled_without_strategy_rules(self):
+        expected = {
+            "561380": "电网设备 ETF",
+            "516150": "稀土 ETF",
+            "159570": "港股创新药 ETF",
+        }
+        for symbol, name in expected.items():
+            spec = get_instrument(symbol)
+            self.assertEqual(spec.name, name)
+            self.assertTrue(spec.is_focus)
+            self.assertEqual(spec.display_tier, "重点")
+            self.assertFalse(spec.is_core)
+            self.assertFalse(spec.supports_campaign)
+            self.assertFalse(spec.supports_backtest)
+
+        ai = get_instrument("159819")
+        self.assertFalse(ai.is_focus)
+        self.assertEqual(ai.display_tier, "观察")
+        self.assertEqual(get_instrument("510300").display_tier, "核心")
+
     def test_unknown_symbol_is_rejected(self):
         with self.assertRaises(ValueError):
             get_instrument("UNKNOWN")

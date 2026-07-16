@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from indicators import sma, rsi, macd, bbands, adx
 from instruments import InstrumentSpec, get_instrument
+from etf_shares import SHARE_OBSERVATION_ENABLED
 
 RSI_THRESHOLDS = {"563360": 35, "510300": 35, "518880": 30, "588000": 25, "513180": 30, "159920": 30}
 
@@ -1043,7 +1044,12 @@ def _reminders(row: pd.Series, df: pd.DataFrame, buy_fraction: str = "1/3", rsi_
 
 
 # ── 主面板 ──
-def show(df: pd.DataFrame, symbol: str = "563360", name: str = None):
+def show(
+    df: pd.DataFrame,
+    symbol: str = "563360",
+    name: str = None,
+    share_observation: dict | None = None,
+):
     """按价格、RVOL、MACD、RSI 顺序输出看盘面板"""
     instrument = get_instrument(symbol)
     df = compute_indicators(df, instrument)
@@ -1089,6 +1095,30 @@ def show(df: pd.DataFrame, symbol: str = "563360", name: str = None):
         for condition in campaign["conditions"]:
             icon = "✓" if condition["ok"] else "○"
             print(f"  {icon} {condition['label']}：{condition['detail']}")
+
+    if SHARE_OBSERVATION_ENABLED and share_observation is not None:
+        def _fmt_share_change(value):
+            return "数据不足" if value is None or pd.isna(value) else f"{value:+.2f}%"
+
+        freshness = (
+            "已刷新" if share_observation.get("freshness") == "current" else "缓存读取"
+        )
+        latest_date = pd.Timestamp(share_observation["latest_date"]).strftime("%Y-%m-%d")
+        print()
+        print("  ── ETF 份额观察（不参与战役） ──")
+        print(f"  {share_observation['state']}")
+        print(
+            f"  最新份额 {share_observation['latest_shares'] / 1e8:.2f}亿份"
+            f" | 当日 {_fmt_share_change(share_observation.get('daily_change_pct'))}"
+            f" | 近5日 {_fmt_share_change(share_observation.get('change_5d_pct'))}"
+            f" | 近20日 {_fmt_share_change(share_observation.get('change_20d_pct'))}"
+        )
+        print(
+            f"  {share_observation['source']} | 数据日 {latest_date} | {freshness}"
+        )
+        if share_observation.get("lag_days", 0) > 0:
+            print(f"  份额数据落后行情 {share_observation['lag_days']} 天")
+        print(f"  {share_observation['explanation']}")
 
     reminders = _reminders(latest, df, rsi_buy_threshold=instrument.rsi_second_entry or 0)
     if reminders:

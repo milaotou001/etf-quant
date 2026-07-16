@@ -18,6 +18,19 @@ COLUMNS_MAP = {
 
 SOURCE_ORDER = ["东方财富", "新浪", "腾讯"]
 
+KNOWN_ETF_SHARE_SPLITS = {
+    "561380": {
+        "record_date": "2026-06-24",
+        "effective_date": "2026-06-25",
+        "ratio": 2.5,
+    },
+    "159995": {
+        "record_date": "2026-07-06",
+        "effective_date": "2026-07-07",
+        "ratio": 2.0,
+    },
+}
+
 
 def attach_data_quality(
     df: pd.DataFrame,
@@ -32,6 +45,35 @@ def attach_data_quality(
     df.attrs["data_freshness"] = freshness
     df.attrs["data_note"] = note
     return df
+
+
+def normalize_known_corporate_actions(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
+    """Normalize known ETF share splits before calculating indicators.
+
+    Public daily feeds keep pre-split prices unchanged. To maintain a
+    continuous series, older OHLC values are divided by the split ratio and
+    historical volume is multiplied by that ratio; turnover is unchanged.
+    """
+    action = KNOWN_ETF_SHARE_SPLITS.get(symbol)
+    if df is None or df.empty or action is None:
+        return df
+
+    effective_date = pd.Timestamp(action["effective_date"])
+    ratio = float(action["ratio"])
+    adjusted = df.copy()
+    before_split = adjusted.index < effective_date
+    for column in ("open", "high", "low", "close"):
+        if column in adjusted.columns:
+            adjusted.loc[before_split, column] = adjusted.loc[before_split, column] / ratio
+    if "volume" in adjusted.columns:
+        adjusted.loc[before_split, "volume"] = adjusted.loc[before_split, "volume"] * ratio
+
+    adjusted.attrs.update(df.attrs)
+    adjusted.attrs["corporate_action_adjustment"] = (
+        f"{symbol} {action['record_date']} 1:{ratio:g}份额拆分；"
+        f"拆分前价格已按1/{ratio:g}调整，成交额保持不变"
+    )
+    return adjusted
 
 
 def _cache_meta_path(cache_path: str) -> str:
@@ -178,7 +220,7 @@ def load_data(symbol: str = "563360", force_refresh: bool = False) -> pd.DataFra
         cached_df = _read_cache(cache_path)
 
     if not force_refresh and not _cache_is_stale(cached_df):
-        return cached_df
+        return normalize_known_corporate_actions(cached_df, symbol)
 
     refresh_errors = []
     fetchers = [
@@ -233,14 +275,14 @@ def load_data(symbol: str = "563360", force_refresh: bool = False) -> pd.DataFra
         if cached_df is not None:
             print(f"数据刷新失败，使用本地缓存：{' | '.join(refresh_errors)}")
             cached_df.attrs["refresh_error"] = " | ".join(refresh_errors)
-            return cached_df
+            return normalize_known_corporate_actions(cached_df, symbol)
         raise RuntimeError(f"所有数据源均失败且无本地缓存：{' | '.join(refresh_errors)}")
 
     os.makedirs(CACHE_DIR, exist_ok=True)
     _write_cache(df, cache_path)
     df.attrs["cache_path"] = cache_path
     df.attrs["cache_mtime"] = datetime.fromtimestamp(os.path.getmtime(cache_path)).strftime("%Y-%m-%d %H:%M:%S")
-    return df
+    return normalize_known_corporate_actions(df, symbol)
 
 
 # ══════════════════════════════════════════════

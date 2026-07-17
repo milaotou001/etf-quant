@@ -24,6 +24,7 @@ from purchase_plan import (
     build_position_progress,
     load_purchase_plan,
     mark_item_bought,
+    plan_item_heading,
     reconcile_purchase_plan,
     save_purchase_plan,
     summarize_plan,
@@ -290,13 +291,7 @@ def _find_plan_item(plan: dict, item_id: str) -> tuple[dict, dict]:
 
 
 def _plan_cell_label(symbol: str, item: dict) -> str:
-    planned_date = item.get("planned_date")
-    if planned_date:
-        heading = f"第{item['number']}笔 · {planned_date[5:]}"
-    else:
-        round_number = (int(item["number"]) - 1) // 3 + 1
-        round_item = (int(item["number"]) - 1) % 3 + 1
-        heading = f"第{round_number}轮 · {round_item}"
+    heading = plan_item_heading(symbol, item)
 
     if item.get("status") == STATUS_RECONCILED and item.get("actual"):
         actual = item["actual"]

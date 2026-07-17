@@ -12,7 +12,7 @@ PRIVATE_DATA_DIR = os.path.join(os.path.dirname(__file__), "private_data")
 PURCHASE_PLAN_PATH = os.path.join(PRIVATE_DATA_DIR, "purchase_plan.json")
 
 PLAN_BASE_AMOUNT = 285_000.0
-CURRENT_PLAN_VERSION = 4
+CURRENT_PLAN_VERSION = 6
 STATUS_PLANNED = "planned"
 STATUS_PENDING = "pending_reconciliation"
 STATUS_RECONCILED = "reconciled"
@@ -29,23 +29,26 @@ TARGETS = {
 
 WIDE_ETF_ALLOCATION = {"first": 0.5, "second": 0.25, "third": 0.25}
 WIDE_ETF_ROUND_AMOUNT = 11_250.0
-WIDE_CURRENT_AMOUNTS = (3_750.0, 3_750.0)
-STRATEGIC_SATELLITE_ALLOCATION = {"first": 0.5, "second": 0.25, "third": 0.25}
+WIDE_SYMBOLS = ("563360", "510300")
+WIDE_CURRENT_AMOUNTS = (3_750.0, 3_750.0, 3_750.0)
+WIDE_PLAN_NOTE = "第三笔等待右侧确认"
+STRATEGIC_SATELLITE_ALLOCATION = {"first": 0.2, "second": 0.3, "third": 0.5}
+STRATEGIC_PLAN_NOTE = "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复"
 STRATEGIC_PLANS = {
     "561380": {
-        "current_round": (3_000.0, 1_500.0, 1_500.0),
+        "current_round": (1_200.0, 1_800.0, 3_000.0),
         "reserved_amount": 6_000.0,
-        "plan_note": "第一笔可执行，后两笔等止跌或修复",
+        "plan_note": STRATEGIC_PLAN_NOTE,
     },
     "516150": {
-        "current_round": (2_500.0, 1_250.0, 1_250.0),
+        "current_round": (1_000.0, 1_500.0, 2_500.0),
         "reserved_amount": 5_000.0,
-        "plan_note": "等待止跌后执行第一笔",
+        "plan_note": STRATEGIC_PLAN_NOTE,
     },
     "159570": {
-        "current_round": (2_000.0, 1_000.0, 1_000.0),
+        "current_round": (800.0, 1_200.0, 2_000.0),
         "reserved_amount": 4_000.0,
-        "plan_note": "等待回调，不追涨",
+        "plan_note": STRATEGIC_PLAN_NOTE,
     },
 }
 
@@ -84,7 +87,6 @@ def _strategic_asset(symbol: str, existing: dict | None = None) -> dict:
         old_item = existing_items.get(number)
         if old_item and old_item.get("status") != STATUS_PLANNED:
             item = copy.deepcopy(old_item)
-            item["planned_amount"] = float(amount)
         else:
             item = _new_item(symbol, number, amount)
         items.append(item)
@@ -99,9 +101,10 @@ def _strategic_asset(symbol: str, existing: dict | None = None) -> dict:
 def default_purchase_plan() -> dict:
     """Return a fresh copy of the confirmed 2026 second-half purchase plan."""
     assets = {}
-    for symbol in ("563360", "510300"):
+    for symbol in WIDE_SYMBOLS:
         assets[symbol] = {
             **copy.deepcopy(TARGETS[symbol]),
+            "plan_note": WIDE_PLAN_NOTE,
             "items": [
                 _new_item(symbol, number, amount)
                 for number, amount in enumerate(WIDE_CURRENT_AMOUNTS, start=1)
@@ -167,7 +170,7 @@ def _migrate_plan(plan: dict) -> dict:
     updated = copy.deepcopy(plan)
     if version < 2:
         wide_etf_amounts = _wide_etf_amounts()
-        for symbol in ("563360", "510300"):
+        for symbol in WIDE_SYMBOLS:
             items = updated.get("assets", {}).get(symbol, {}).get("items", [])
             if len(items) != len(wide_etf_amounts):
                 continue
@@ -182,7 +185,7 @@ def _migrate_plan(plan: dict) -> dict:
 
     if version < 4:
         assets = updated.setdefault("assets", {})
-        for symbol in ("563360", "510300"):
+        for symbol in WIDE_SYMBOLS:
             asset = assets.get(symbol)
             if not asset:
                 continue
@@ -218,8 +221,41 @@ def _migrate_plan(plan: dict) -> dict:
             "strategic_satellite": copy.deepcopy(STRATEGIC_SATELLITE_ALLOCATION)
         }
 
+    if version < 5:
+        assets = updated.setdefault("assets", {})
+        for symbol in WIDE_SYMBOLS:
+            asset = assets.get(symbol)
+            if not asset:
+                continue
+            asset["plan_note"] = WIDE_PLAN_NOTE
+            items = asset.setdefault("items", [])
+            existing_numbers = {int(item.get("number") or 0) for item in items}
+            if 3 not in existing_numbers:
+                items.append(_new_item(symbol, 3, WIDE_CURRENT_AMOUNTS[2]))
+            items.sort(key=lambda item: int(item.get("number") or 0))
+
+    if version < 6:
+        assets = updated.setdefault("assets", {})
+        for symbol in STRATEGIC_PLANS:
+            assets[symbol] = _strategic_asset(symbol, assets.get(symbol))
+        updated["allocation_scheme"] = {
+            "strategic_satellite": copy.deepcopy(STRATEGIC_SATELLITE_ALLOCATION)
+        }
+
     updated["version"] = CURRENT_PLAN_VERSION
     return updated
+
+
+def plan_item_heading(symbol: str, item: dict) -> str:
+    """Return the concise heading used by a purchase-plan cell."""
+    planned_date = item.get("planned_date")
+    if planned_date:
+        return f"第{item['number']}笔 · {planned_date[5:]}"
+    if symbol in WIDE_SYMBOLS:
+        return f"第{item['number']}笔"
+    round_number = (int(item["number"]) - 1) // 3 + 1
+    round_item = (int(item["number"]) - 1) % 3 + 1
+    return f"第{round_number}轮 · {round_item}"
 
 
 def _find_item(plan: dict, item_id: str) -> dict:

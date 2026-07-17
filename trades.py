@@ -4,6 +4,8 @@ import json
 import pandas as pd
 import numpy as np
 
+from data import KNOWN_ETF_SHARE_SPLITS
+
 
 PRIVATE_DATA_DIR = os.path.join(os.path.dirname(__file__), "private_data")
 TRADE_CACHE_PATH = os.path.join(PRIVATE_DATA_DIR, "trades.json")
@@ -20,6 +22,11 @@ _SYMBOL_MAP = {
     "510300": "510300",
     "518880": "518880",
     "588000": "588000",
+    "159995": "159995",
+    "159819": "159819",
+    "561380": "561380",
+    "516150": "516150",
+    "159570": "159570",
     "513180": "513180",
     "159920": "159920",
 }
@@ -56,9 +63,19 @@ def parse_trade_dataframe(df: pd.DataFrame) -> dict:
     tx["日期"] = pd.to_datetime(tx["日期"], format="%Y%m%d")
 
     trades = tx[tx["摘要"].isin(["证券买入", "证券卖出"])].copy()
-    trades["成交金额"] = trades["成交数量"] * trades["成交均价"]
     trades = trades.sort_values("日期")
     trades = trades[trades["证券代码"].astype(str).isin(_SYMBOL_MAP.keys())].copy()
+
+    for code, action in KNOWN_ETF_SHARE_SPLITS.items():
+        before_split = (
+            (trades["证券代码"].astype(str) == code)
+            & (trades["日期"] < pd.Timestamp(action["effective_date"]))
+        )
+        ratio = float(action["ratio"])
+        trades.loc[before_split, "成交数量"] *= ratio
+        trades.loc[before_split, "成交均价"] /= ratio
+
+    trades["成交金额"] = trades["成交数量"] * trades["成交均价"]
 
     if trades.empty:
         return {}

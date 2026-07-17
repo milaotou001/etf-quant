@@ -35,6 +35,42 @@ class TradeStatementTests(unittest.TestCase):
 
         self.assertEqual([entry["type"] for entry in parsed["563360"]], ["buy", "sell_profit"])
 
+    def test_strategy_and_observation_etfs_are_not_dropped_from_statement(self):
+        header = self._statement_rows()[1]
+        rows = [
+            ["电子对账单"] + [None] * 12,
+            header,
+            ["20260716", "人民币", "private", "159995", "芯片ETF", "证券买入", 800, 1.317, 0, 0, 0, -1053.6, 10000],
+            ["20260716", "人民币", "private", "159819", "AI智能", "证券买入", 700, 1.980, 0, 0, 0, -1386, 9000],
+            ["20260716", "人民币", "private", "561380", "电网设备", "证券卖出", 1000, 0.723, 0, 0, 0, 723, 9723],
+            ["20260716", "人民币", "private", "516150", "稀土ETF", "证券买入", 1000, 1.674, 0, 0, 0, -1674, 8049],
+            ["20260716", "人民币", "private", "159570", "创新药ETF", "证券买入", 1000, 1.458, 0, 0, 0, -1458, 6591],
+        ]
+
+        parsed = parse_trade_dataframe(pd.DataFrame(rows))
+
+        self.assertEqual(
+            set(parsed),
+            {"159995", "159819", "561380", "516150", "159570"},
+        )
+
+    def test_chip_split_normalizes_pre_split_trade_prices_and_quantities(self):
+        header = self._statement_rows()[1]
+        rows = [
+            ["电子对账单"] + [None] * 12,
+            header,
+            ["20260601", "人民币", "private", "159995", "芯片ETF", "证券买入", 900, 2.380, 0, 0, 0, -2142, 10000],
+            ["20260617", "人民币", "private", "159995", "芯片ETF", "证券买入", 600, 2.595, 0, 0, 0, -1557, 8443],
+            ["20260706", "人民币", "private", "159995", "芯片ETF", "红股入帐", 1500, 2.976, 0, 0, 0, 0, 8443],
+            ["20260716", "人民币", "private", "159995", "芯片ETF", "证券买入", 800, 1.317, 0, 0, 0, -1053.6, 7389.4],
+        ]
+
+        parsed = parse_trade_dataframe(pd.DataFrame(rows))["159995"]
+
+        self.assertEqual([entry["qty"] for entry in parsed], [1800, 1200, 800])
+        self.assertEqual([entry["price"] for entry in parsed], [1.19, 1.2975, 1.317])
+        self.assertEqual(sum(entry["qty"] for entry in parsed), 3800)
+
     def test_parsed_trades_round_trip_through_private_cache(self):
         import tempfile
 

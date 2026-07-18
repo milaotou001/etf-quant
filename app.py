@@ -68,22 +68,22 @@ st.markdown(
       .block-container { max-width: 1320px; padding-top: 2rem; }
       h1, h2, h3 { letter-spacing: -0.02em; }
       [data-testid="stMetric"] { border-left: 3px solid #1b6b5c; padding-left: 0.8rem; }
-      .status-card { border-left: 5px solid #1b6b5c; background: #f4f8f6; padding: 1rem 1.15rem; border-radius: .4rem; }
+      .status-card { border-left: 5px solid #1b6b5c; background: #f4f8f6; color: #101828 !important; padding: 1rem 1.15rem; border-radius: .4rem; }
       .muted { color: #667085; font-size: .9rem; }
-      .plan-intro { background: linear-gradient(105deg, #f7faf8 0%, #ffffff 75%); border: 1px solid #d9e5df; border-left: 6px solid #1b6b5c; padding: 1rem 1.2rem; border-radius: .65rem; margin: .25rem 0 1.2rem; }
+      .plan-intro { background: linear-gradient(105deg, #f7faf8 0%, #ffffff 75%); border: 1px solid #d9e5df; border-left: 6px solid #1b6b5c; color: #101828 !important; padding: 1rem 1.2rem; border-radius: .65rem; margin: .25rem 0 1.2rem; }
       .plan-intro b { color: #143f37; font-size: 1.03rem; }
       .asset-head { display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-bottom: .35rem; }
       .asset-chip { display: inline-flex; align-items: center; gap: .55rem; font-weight: 720; font-size: 1.02rem; }
       .asset-dot { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
       .asset-target { color: #667085; font-size: .86rem; }
-      .progress-card { border: 1px solid #e4e7ec; border-radius: .7rem; padding: .85rem 1rem; margin-bottom: .7rem; background: #fff; }
+      .progress-card { border: 1px solid #e4e7ec; border-radius: .7rem; padding: .85rem 1rem; margin-bottom: .7rem; background: #fff; color: #101828 !important; }
       .progress-meta { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
       .progress-title { font-weight: 700; }
       .progress-number { color: #475467; font-size: .88rem; text-align: right; }
       .progress-track { height: .72rem; width: 100%; border-radius: 999px; overflow: hidden; }
       .progress-fill { height: 100%; border-radius: 999px; }
       .progress-foot { display: flex; justify-content: space-between; color: #667085; font-size: .8rem; margin-top: .4rem; }
-      .cash-card { border: 1px solid #e4e7ec; border-left: 5px solid #667085; border-radius: .7rem; padding: .9rem 1rem; background: #fafafa; }
+      .cash-card { border: 1px solid #e4e7ec; border-left: 5px solid #667085; border-radius: .7rem; padding: .9rem 1rem; background: #fafafa; color: #101828 !important; }
       .cash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
       .cash-label { color: #667085; font-size: .82rem; }
       .cash-value { color: #101828; font-weight: 720; font-size: 1.08rem; margin-top: .15rem; }

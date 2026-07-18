@@ -47,6 +47,12 @@ class MobileAppModeTests(unittest.TestCase):
     def test_cloud_data_failure_is_explicit(self):
         self.assertIn("本次未取得行情数据", self.source)
 
+    def test_cloud_plan_does_not_fetch_live_prices(self):
+        self.assertIn(
+            "for core_symbol in plan_price_symbols(MOBILE_READ_ONLY, TARGETS):",
+            self.source,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

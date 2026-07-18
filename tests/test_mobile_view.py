@@ -1,4 +1,5 @@
 import copy
+import mobile_view
 import os
 import sys
 import unittest
@@ -19,6 +20,11 @@ from purchase_plan import CURRENT_PLAN_VERSION, default_purchase_plan
 
 
 class MobileViewTests(unittest.TestCase):
+    def test_read_only_plan_skips_live_price_fetches(self):
+        selector = getattr(mobile_view, "plan_price_symbols", None)
+        self.assertIsNotNone(selector)
+        self.assertEqual(selector(True, ["563360", "510300"]), ())
+
     def test_local_mode_is_default_and_keeps_full_navigation(self):
         self.assertFalse(is_mobile_read_only({}))
         self.assertEqual(

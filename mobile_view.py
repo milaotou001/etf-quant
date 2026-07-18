@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 
 from purchase_plan import CURRENT_PLAN_VERSION
 
@@ -43,6 +43,10 @@ def mobile_page_options(read_only: bool) -> list[str]:
 
 def primary_metric_order(read_only: bool) -> list[str]:
     return ["rsi", "price", "macd", "rvol"] if read_only else ["price", "rsi", "macd", "rvol"]
+
+
+def plan_price_symbols(read_only: bool, symbols: Iterable[str]) -> tuple[str, ...]:
+    return () if read_only else tuple(symbols)
 
 
 def _validate_plan(plan: object) -> dict:

@@ -23,6 +23,7 @@ from mobile_view import (
     is_mobile_read_only,
     load_mobile_plan,
     mobile_page_options,
+    plan_price_symbols,
     primary_metric_order,
 )
 from policy.page import render_policy_strategy
@@ -834,7 +835,7 @@ if page == "半年买入计划":
 
     latest_prices = {}
     unavailable = []
-    for core_symbol in TARGETS:
+    for core_symbol in plan_price_symbols(MOBILE_READ_ONLY, TARGETS):
         try:
             core_df = load_prepared_data(core_symbol, st.session_state.refresh_token)
             latest_prices[core_symbol] = float(core_df.iloc[-1]["close"])

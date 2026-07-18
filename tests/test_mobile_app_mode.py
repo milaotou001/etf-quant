@@ -62,6 +62,11 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn("生成手机同步包", self.source)
         self.assertIn("export_secret_file", self.source)
 
+    def test_mobile_trade_points_follow_the_same_visibility_toggle(self):
+        self.assertIn('show_trades = st.checkbox("显示个人交易记录")', self.source)
+        self.assertIn("mobile_trade_cache.get(symbol) if MOBILE_READ_ONLY and show_trades", self.source)
+        self.assertIn("个人交易点已关闭", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

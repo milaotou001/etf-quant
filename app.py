@@ -781,10 +781,9 @@ with st.sidebar:
     page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
     if st.button("刷新当前数据"):
         st.session_state.refresh_token += 1
-    show_trades = False
+    show_trades = st.checkbox("显示个人交易记录")
     uploaded_statement = None
     if not MOBILE_READ_ONLY:
-        show_trades = st.checkbox("显示个人交易记录")
         uploaded_statement = st.file_uploader(
             "更新电子对账单（可选）",
             type=["xlsx"],
@@ -826,19 +825,21 @@ if not MOBILE_READ_ONLY:
             st.sidebar.info(st.session_state.mobile_export_notice)
 
 trades = (
-    mobile_trade_cache.get(symbol)
-    if MOBILE_READ_ONLY
+    mobile_trade_cache.get(symbol) if MOBILE_READ_ONLY and show_trades
     else trade_cache.get(symbol) if show_trades else None
 )
 if show_trades:
-    st.sidebar.caption(f"本机已保存 {len(trade_cache)} 个标的的交易记录。")
-    if st.session_state.get("trade_cache_notice"):
-        st.sidebar.success(st.session_state.trade_cache_notice)
-elif MOBILE_READ_ONLY:
-    if mobile_trade_cache:
-        st.sidebar.caption("已同步个人交易点；图表中的圆点仅用于复盘。")
+    if MOBILE_READ_ONLY:
+        if mobile_trade_cache:
+            st.sidebar.caption("已同步个人交易点；图表中的圆点仅用于复盘。")
+        else:
+            st.sidebar.caption("暂无已同步交易点；RSI 和计划仍可正常查看。")
     else:
-        st.sidebar.caption("暂无已同步交易点；RSI 和计划仍可正常查看。")
+        st.sidebar.caption(f"本机已保存 {len(trade_cache)} 个标的的交易记录。")
+        if st.session_state.get("trade_cache_notice"):
+            st.sidebar.success(st.session_state.trade_cache_notice)
+elif MOBILE_READ_ONLY:
+    st.sidebar.caption("个人交易点已关闭；RSI 和计划仍可正常查看。")
 
 if page == "半年买入计划":
     if MOBILE_READ_ONLY:

@@ -35,6 +35,18 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertNotIn("save_purchase_plan", branch)
         self.assertNotIn("load_trade_cache", branch)
 
+    def test_cloud_main_view_prioritizes_rsi(self):
+        self.assertIn("primary_metric_order(read_only)", self.source)
+        self.assertIn('metric_columns["rsi"]', self.source)
+
+    def test_mobile_css_and_read_only_plan_card_exist(self):
+        self.assertIn("@media (max-width: 700px)", self.source)
+        self.assertIn(".plan-cell-readonly", self.source)
+        self.assertIn("grid-template-columns: 1fr", self.source)
+
+    def test_cloud_data_failure_is_explicit(self):
+        self.assertIn("本次未取得行情数据", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

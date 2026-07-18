@@ -23,6 +23,7 @@ from mobile_view import (
     is_mobile_read_only,
     load_mobile_plan,
     mobile_page_options,
+    primary_metric_order,
 )
 from policy.page import render_policy_strategy
 from portfolio_review import (
@@ -81,7 +82,15 @@ st.markdown(
       .cash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
       .cash-label { color: #667085; font-size: .82rem; }
       .cash-value { color: #101828; font-weight: 720; font-size: 1.08rem; margin-top: .15rem; }
-      @media (max-width: 700px) { .cash-grid { grid-template-columns: 1fr; } }
+      .plan-cell-readonly { border: 1px solid #e4e7ec; border-left: 4px solid #1b6b5c; border-radius: .55rem; padding: .75rem .85rem; margin: .45rem 0; background: #fff; line-height: 1.45; }
+      @media (max-width: 700px) {
+        .block-container { max-width: 100%; padding: 1rem .75rem 3rem; }
+        .asset-head, .progress-meta, .progress-foot { display: grid; grid-template-columns: 1fr; gap: .25rem; }
+        .asset-target, .progress-number { text-align: left; }
+        [data-testid="stMetric"] { padding: .55rem .65rem; }
+        .plan-intro { padding: .8rem .9rem; }
+        .cash-grid { grid-template-columns: 1fr; }
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -134,6 +143,7 @@ def _render_main(
     spec,
     trades: list[dict] | None,
     refresh_token: int = 0,
+    read_only: bool = False,
 ) -> None:
     latest = df.iloc[-1]
     analysis = build_market_analysis(df)
@@ -143,17 +153,16 @@ def _render_main(
     if df.attrs.get("data_note"):
         st.caption(f"数据说明：{df.attrs['data_note']}")
 
-    price, rsi, macd, rvol = st.columns(4)
-    with price:
-        st.metric("收盘", _fmt_number(latest["close"], 4), _fmt_number(latest.get("chg"), 1, "—") + "%")
-    with rsi:
+    metric_columns = dict(zip(primary_metric_order(read_only), st.columns(4)))
+    with metric_columns["rsi"]:
         st.metric("RSI (14)", _fmt_number(latest.get("rsi"), 0))
-    with macd:
+    with metric_columns["price"]:
+        st.metric("收盘", _fmt_number(latest["close"], 4), _fmt_number(latest.get("chg"), 1, "—") + "%")
+    with metric_columns["macd"]:
         hist_col = next((c for c in df.columns if c.startswith("MACDh_")), "")
         st.metric("MACD HIST", _fmt_number(latest.get(hist_col), 4))
-    with rvol:
-        value = latest.get("rvol")
-        st.metric("成交额 RVOL", _fmt_number(value, 2, "不可用"))
+    with metric_columns["rvol"]:
+        st.metric("成交额 RVOL", _fmt_number(latest.get("rvol"), 2, "不可用"))
 
     st.markdown(
         f"<div class='status-card'><b>{analysis['state_label']}</b><br>{analysis['one_liner']}</div>",
@@ -851,11 +860,18 @@ else:
     try:
         df = load_prepared_data(symbol, st.session_state.refresh_token)
     except Exception as exc:
-        st.error(f"数据加载失败：{exc}")
+        heading = "本次未取得行情数据" if MOBILE_READ_ONLY else "数据加载失败"
+        st.error(f"{heading}：{exc}")
         st.stop()
 
     if page == "状态与图表":
-        _render_main(df, spec, trades, st.session_state.refresh_token)
+        _render_main(
+            df,
+            spec,
+            trades,
+            st.session_state.refresh_token,
+            read_only=MOBILE_READ_ONLY,
+        )
     elif page == "复盘日志":
         _render_journal(df, spec)
     elif page == "策略回测":

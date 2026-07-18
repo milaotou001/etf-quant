@@ -1,6 +1,8 @@
 """本地 ETF 决策辅助：主页面只保留状态与图表，其余内容按需查看。"""
 from datetime import date
 import hashlib
+import html
+import os
 import pandas as pd
 import streamlit as st
 
@@ -16,6 +18,12 @@ from data import load_data
 from financial_report_check import build_financial_report_check
 from instruments import get_instrument, list_instruments
 from journal import create_entry, list_entries, review
+from mobile_view import (
+    MobileViewConfigError,
+    is_mobile_read_only,
+    load_mobile_plan,
+    mobile_page_options,
+)
 from policy.page import render_policy_strategy
 from portfolio_review import (
     ACCOUNT_BASE_AMOUNT,
@@ -78,6 +86,12 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+try:
+    MOBILE_READ_ONLY = is_mobile_read_only(os.environ)
+except MobileViewConfigError as exc:
+    st.error(f"手机只读配置错误：{exc}")
+    st.stop()
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -400,7 +414,7 @@ def _purchase_item_dialog(plan: dict, item_id: str) -> None:
                 st.rerun()
 
 
-def _render_asset_plan_row(symbol: str, asset: dict) -> None:
+def _render_asset_plan_row(symbol: str, asset: dict, read_only: bool = False) -> None:
     with st.container(border=True):
         color = asset["color"]
         target_text = f"理想仓位 {_money(asset['target'])}"
@@ -415,6 +429,15 @@ def _render_asset_plan_row(symbol: str, asset: dict) -> None:
         if asset.get("plan_note"):
             st.caption(asset["plan_note"])
         items = asset.get("items", [])
+        if read_only:
+            for item in items:
+                label = html.escape(_plan_cell_label(symbol, item)).replace("\n", "<br>")
+                st.markdown(
+                    f"<div class='plan-cell-readonly'>{label}</div>",
+                    unsafe_allow_html=True,
+                )
+            return
+
         for start in range(0, len(items), 6):
             batch = items[start:start + 6]
             columns = st.columns(len(batch), gap="small")
@@ -480,7 +503,13 @@ def _render_financial_report_check() -> None:
         st.caption("检查日期不是买入日期；公告出来后仍要综合利润、现金流、订单或产品收入判断。")
 
 
-def _render_purchase_plan(plan: dict, trade_cache: dict, latest_prices: dict, snapshot: dict) -> None:
+def _render_purchase_plan(
+    plan: dict,
+    trade_cache: dict,
+    latest_prices: dict,
+    snapshot: dict,
+    read_only: bool = False,
+) -> None:
     st.title("半年买入计划")
     st.markdown(
         "<div class='plan-intro'><b>固定计划，逐笔确认</b><br>"
@@ -497,9 +526,16 @@ def _render_purchase_plan(plan: dict, trade_cache: dict, latest_prices: dict, sn
     _render_financial_report_check()
 
     st.subheader("计划与实际成交")
-    st.caption("◇ 计划中　◐ 已买入·待对账　✓ 已对账。每个格子本身就是操作入口。")
+    if read_only:
+        st.caption("手机只读快照 · ◇ 计划中　◐ 已买入·待对账　✓ 已对账")
+    else:
+        st.caption("◇ 计划中　◐ 已买入·待对账　✓ 已对账。每个格子本身就是操作入口。")
     for symbol in TARGETS:
-        _render_asset_plan_row(symbol, plan["assets"][symbol])
+        _render_asset_plan_row(symbol, plan["assets"][symbol], read_only=read_only)
+
+    if read_only:
+        st.caption("计划变化后需重新同步只读快照；手机端不会修改本机计划。")
+        return
 
     selected_item_id = st.session_state.get("purchase_plan_item_id")
     if selected_item_id:
@@ -728,34 +764,41 @@ spec_by_symbol = {spec.symbol: spec for spec in specs}
 with st.sidebar:
     st.markdown("## 决策辅助")
     symbol = st.selectbox("标的", list(spec_by_symbol), format_func=lambda key: f"{spec_by_symbol[key].display_tier} · {spec_by_symbol[key].name}")
-    page = st.radio("页面", ["状态与图表", "复盘日志", "策略回测", "策略规则", "半年买入计划", "组合复盘", "战略方向"])
+    page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
     if st.button("刷新当前数据"):
         st.session_state.refresh_token += 1
-    show_trades = st.checkbox("显示个人交易记录")
-    uploaded_statement = st.file_uploader(
-        "更新电子对账单（可选）",
-        type=["xlsx"],
-        disabled=page == "战略方向" or (not show_trades and page not in {"半年买入计划", "组合复盘"}),
-    )
-    st.caption("解析后的记录会跨页面和重启保留；新对账单更新交易与现金，不会覆盖买入计划。")
+    show_trades = False
+    uploaded_statement = None
+    if not MOBILE_READ_ONLY:
+        show_trades = st.checkbox("显示个人交易记录")
+        uploaded_statement = st.file_uploader(
+            "更新电子对账单（可选）",
+            type=["xlsx"],
+            disabled=page == "战略方向" or (not show_trades and page not in {"半年买入计划", "组合复盘"}),
+        )
+        st.caption("解析后的记录会跨页面和重启保留；新对账单更新交易与现金，不会覆盖买入计划。")
+    else:
+        st.caption("手机只读模式 · 不上传对账单，不修改计划")
 
 spec = spec_by_symbol[symbol]
 if page == "战略方向":
     render_policy_strategy()
     st.stop()
 
-trade_cache = load_trade_cache()
-if uploaded_statement is not None:
-    upload_hash = hashlib.sha256(uploaded_statement.getvalue()).hexdigest()
-    if st.session_state.get("trade_upload_hash") != upload_hash:
-        try:
-            trade_cache = update_trade_cache(uploaded_statement)
-            st.session_state.trade_upload_hash = upload_hash
-            st.session_state.trade_cache_notice = "对账单已更新，已替换本机缓存。"
-        except Exception as exc:
-            st.warning(f"未能更新对账单：{exc}")
-    else:
-        trade_cache = load_trade_cache()
+trade_cache = {}
+if not MOBILE_READ_ONLY:
+    trade_cache = load_trade_cache()
+    if uploaded_statement is not None:
+        upload_hash = hashlib.sha256(uploaded_statement.getvalue()).hexdigest()
+        if st.session_state.get("trade_upload_hash") != upload_hash:
+            try:
+                trade_cache = update_trade_cache(uploaded_statement)
+                st.session_state.trade_upload_hash = upload_hash
+                st.session_state.trade_cache_notice = "对账单已更新，已替换本机缓存。"
+            except Exception as exc:
+                st.warning(f"未能更新对账单：{exc}")
+        else:
+            trade_cache = load_trade_cache()
 
 trades = trade_cache.get(symbol) if show_trades else None
 if show_trades:
@@ -763,26 +806,47 @@ if show_trades:
     if st.session_state.get("trade_cache_notice"):
         st.sidebar.success(st.session_state.trade_cache_notice)
 
-if page in {"半年买入计划", "组合复盘"}:
+if page == "半年买入计划":
+    if MOBILE_READ_ONLY:
+        try:
+            display_plan = load_mobile_plan(os.environ)
+        except MobileViewConfigError as exc:
+            st.error(f"手机计划快照不可用：{exc}")
+            st.stop()
+        display_trade_cache = {}
+        account_snapshot = {}
+    else:
+        plan = load_purchase_plan()
+        display_plan = reconcile_purchase_plan(plan, trade_cache)
+        if display_plan != plan:
+            save_purchase_plan(display_plan)
+        display_trade_cache = trade_cache
+        account_snapshot = load_account_snapshot()
+
+    latest_prices = {}
+    unavailable = []
+    for core_symbol in TARGETS:
+        try:
+            core_df = load_prepared_data(core_symbol, st.session_state.refresh_token)
+            latest_prices[core_symbol] = float(core_df.iloc[-1]["close"])
+        except Exception:
+            latest_prices[core_symbol] = None
+            unavailable.append(TARGETS[core_symbol]["name"])
+    if unavailable:
+        st.caption(f"暂未读取行情：{'、'.join(unavailable)}；计划快照仍可查看。")
+    _render_purchase_plan(
+        display_plan,
+        display_trade_cache,
+        latest_prices,
+        account_snapshot,
+        read_only=MOBILE_READ_ONLY,
+    )
+elif page == "组合复盘":
     plan = load_purchase_plan()
     reconciled_plan = reconcile_purchase_plan(plan, trade_cache)
     if reconciled_plan != plan:
         save_purchase_plan(reconciled_plan)
-    if page == "组合复盘":
-        _render_portfolio_review(reconciled_plan, trade_cache, st.session_state.refresh_token)
-    else:
-        latest_prices = {}
-        unavailable = []
-        for core_symbol in TARGETS:
-            try:
-                core_df = load_prepared_data(core_symbol, st.session_state.refresh_token)
-                latest_prices[core_symbol] = float(core_df.iloc[-1]["close"])
-            except Exception:
-                latest_prices[core_symbol] = None
-                unavailable.append(TARGETS[core_symbol]["name"])
-        if unavailable:
-            st.caption(f"暂未读取行情：{'、'.join(unavailable)}；计划格仍可正常标记。")
-        _render_purchase_plan(reconciled_plan, trade_cache, latest_prices, load_account_snapshot())
+    _render_portfolio_review(reconciled_plan, trade_cache, st.session_state.refresh_token)
 else:
     try:
         df = load_prepared_data(symbol, st.session_state.refresh_token)

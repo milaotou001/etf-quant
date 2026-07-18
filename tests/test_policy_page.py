@@ -12,6 +12,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from policy.evidence import INITIAL_EVIDENCE
 from policy.reviews import load_policy_reviews
+from mobile_view import FULL_PAGE_OPTIONS
 
 
 def _policy_app(review_path: str) -> AppTest:
@@ -77,12 +78,12 @@ class PolicyPageTests(unittest.TestCase):
 
     def test_main_app_lists_review_before_strategy_and_routes_strategy_before_market_data(self):
         source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
-        navigation = (
-            '["状态与图表", "复盘日志", "策略回测", "策略规则", '
-            '"半年买入计划", "组合复盘", "战略方向"]'
-        )
 
-        self.assertIn(navigation, source)
+        self.assertEqual(
+            FULL_PAGE_OPTIONS,
+            ["状态与图表", "复盘日志", "策略回测", "策略规则", "半年买入计划", "组合复盘", "战略方向"],
+        )
+        self.assertIn("mobile_page_options(MOBILE_READ_ONLY)", source)
         self.assertIn('if page == "战略方向":', source)
         strategy_route = source.index('if page == "战略方向":')
         market_load = source.index("df = load_prepared_data", strategy_route)

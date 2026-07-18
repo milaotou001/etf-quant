@@ -14,3 +14,9 @@ journal/
 private_data/
 yfinance.cache
 普通账户电子对账单.xlsx
+.streamlit/secrets.toml
+tmp/
+恒生/
+科技/
+scripts/_jiaogedan_raw.csv
+普通账户电子对账单*.xlsx

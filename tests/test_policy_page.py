@@ -75,11 +75,11 @@ class PolicyPageTests(unittest.TestCase):
         first_id = INITIAL_EVIDENCE[0]["id"]
         self.assertEqual(state["reviews"][first_id]["decision"], "confirmed")
 
-    def test_main_app_lists_strategy_as_sixth_page_and_routes_before_market_data(self):
+    def test_main_app_lists_review_before_strategy_and_routes_strategy_before_market_data(self):
         source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
         navigation = (
             '["状态与图表", "复盘日志", "策略回测", "策略规则", '
-            '"半年买入计划", "战略方向"]'
+            '"半年买入计划", "组合复盘", "战略方向"]'
         )
 
         self.assertIn(navigation, source)
@@ -87,6 +87,22 @@ class PolicyPageTests(unittest.TestCase):
         strategy_route = source.index('if page == "战略方向":')
         market_load = source.index("df = load_prepared_data", strategy_route)
         self.assertLess(strategy_route, market_load)
+
+    def test_portfolio_review_explains_risk_in_plain_language(self):
+        source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
+
+        self.assertIn("先看结论", source)
+        self.assertIn("不是实际亏损，也不是预测", source)
+        self.assertIn("主要风险来源", source)
+        self.assertIn("历史最差模拟影响", source)
+
+    def test_purchase_plan_contains_financial_report_check_card(self):
+        source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
+
+        self.assertIn("def _render_financial_report_check", source)
+        self.assertIn("财报检查", source)
+        self.assertIn("检查日期不是买入日期", source)
+        self.assertIn("_render_financial_report_check()", source)
 
 
 if __name__ == "__main__":

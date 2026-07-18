@@ -13,15 +13,28 @@ from dashboard import (
     compute_indicators,
 )
 from data import load_data
+from financial_report_check import build_financial_report_check
 from instruments import get_instrument, list_instruments
 from journal import create_entry, list_entries, review
 from policy.page import render_policy_strategy
+from portfolio_review import (
+    ACCOUNT_BASE_AMOUNT,
+    ATTRIBUTION_START,
+    COMPARATOR_BY_SYMBOL,
+    DRAWDOWN_BUDGET,
+    build_attribution_rows,
+    build_cluster_exposure,
+    run_pressure_replay,
+)
 from purchase_plan import (
+    EXECUTION_DEVIATION,
+    EXECUTION_ON_PLAN,
     STATUS_PENDING,
     STATUS_PLANNED,
     STATUS_RECONCILED,
     TARGETS,
     build_position_progress,
+    calculate_open_quantity,
     load_purchase_plan,
     mark_item_bought,
     plan_item_heading,
@@ -323,11 +336,33 @@ def _purchase_item_dialog(plan: dict, item_id: str) -> None:
 
     if item.get("status") == STATUS_PLANNED:
         confirmed_date = st.date_input("实际买入日期", value=date.today(), key=f"confirm-date-{item_id}")
+        execution_label = st.radio(
+            "执行方式",
+            ["按原计划", "偏离计划"],
+            horizontal=True,
+            key=f"execution-type-{item_id}",
+        )
+        deviation_reason = ""
+        if execution_label == "偏离计划":
+            deviation_reason = st.text_input(
+                "偏离原因（可选）",
+                key=f"deviation-reason-{item_id}",
+            )
         st.caption("确认后先按计划金额计入进度；上传新对账单后会补全真实成交。")
         confirm, cancel = st.columns(2)
         with confirm:
             if st.button("确认已买入", type="primary", width="stretch"):
-                updated = mark_item_bought(plan, item_id, confirmed_date.isoformat())
+                updated = mark_item_bought(
+                    plan,
+                    item_id,
+                    confirmed_date.isoformat(),
+                    execution_type=(
+                        EXECUTION_DEVIATION
+                        if execution_label == "偏离计划"
+                        else EXECUTION_ON_PLAN
+                    ),
+                    deviation_reason=deviation_reason or None,
+                )
                 save_purchase_plan(updated)
                 _clear_purchase_dialog()
                 st.rerun()
@@ -345,6 +380,11 @@ def _purchase_item_dialog(plan: dict, item_id: str) -> None:
             st.info(f"已标记为分{len(dates)}次买入（{date_text}），上传对账单后会合并到这一笔。")
         else:
             st.info(f"已于 {date_text} 标记买入，目前等待对账单补全。")
+        if item.get("execution_type") == EXECUTION_DEVIATION:
+            reason = item.get("deviation_reason") or "未填写原因"
+            st.caption(f"执行记录：偏离计划 · {reason}")
+        elif item.get("execution_type") == EXECUTION_ON_PLAN:
+            st.caption("执行记录：按原计划")
         if item.get("needs_confirmation"):
             st.warning("同日存在多笔可能成交，系统没有自动归类。")
         undo, close = st.columns(2)
@@ -412,6 +452,34 @@ def _render_position_progress(progress: dict) -> None:
         )
 
 
+def _render_financial_report_check() -> None:
+    check = build_financial_report_check(date.today())
+    with st.container(border=True):
+        st.markdown("### 财报检查")
+        if check["status"] in {"today", "due"}:
+            st.warning(check["headline"])
+        else:
+            st.info(check["headline"])
+
+        timeline, windows = st.columns([3, 2])
+        with timeline:
+            st.markdown("**三个固定检查点**")
+            for checkpoint in check["checkpoints"]:
+                checkpoint_date = checkpoint["date"]
+                marker = "●" if checkpoint_date == check["next_date"] else "○"
+                st.caption(
+                    f"{marker} {checkpoint_date.month}月{checkpoint_date.day}日 · "
+                    f"{checkpoint['label']}：{checkpoint['action']}"
+                )
+        with windows:
+            st.markdown("**最晚披露窗口**")
+            for note in check["disclosure_notes"]:
+                st.caption(f"• {note}")
+
+        st.info(check["candidate_note"])
+        st.caption("检查日期不是买入日期；公告出来后仍要综合利润、现金流、订单或产品收入判断。")
+
+
 def _render_purchase_plan(plan: dict, trade_cache: dict, latest_prices: dict, snapshot: dict) -> None:
     st.title("半年买入计划")
     st.markdown(
@@ -425,6 +493,8 @@ def _render_purchase_plan(plan: dict, trade_cache: dict, latest_prices: dict, sn
     confirmed.metric("已确认", _money(summary["confirmed_amount"]))
     remaining.metric("计划剩余", _money(summary["remaining_amount"]))
     count.metric("已完成笔数", f"{summary['confirmed_count']} / {summary['total_count']}")
+
+    _render_financial_report_check()
 
     st.subheader("计划与实际成交")
     st.caption("◇ 计划中　◐ 已买入·待对账　✓ 已对账。每个格子本身就是操作入口。")
@@ -450,6 +520,206 @@ def _render_purchase_plan(plan: dict, trade_cache: dict, latest_prices: dict, sn
     )
 
 
+def _review_price_frames(symbols: set[str], refresh_token: int) -> tuple[dict, list[str]]:
+    frames = {}
+    unavailable = []
+    for review_symbol in sorted(symbols):
+        try:
+            frames[review_symbol] = load_data(
+                symbol=review_symbol,
+                force_refresh=refresh_token > 0,
+            )
+        except Exception:
+            unavailable.append(review_symbol)
+    return frames, unavailable
+
+
+def _render_portfolio_review(plan: dict, trade_cache: dict, refresh_token: int) -> None:
+    st.title("组合风险概览")
+    st.caption(
+        f"正式交易贡献从 {ATTRIBUTION_START.strftime('%Y-%m-%d')} 开始；此前持仓只用于风险模拟。"
+    )
+
+    pending_by_symbol = {
+        symbol: sum(
+            float(item.get("planned_amount") or 0)
+            for item in asset.get("items", [])
+            if item.get("status") == STATUS_PENDING and not item.get("needs_confirmation")
+        )
+        for symbol, asset in plan.get("assets", {}).items()
+    }
+    held_symbols = {
+        symbol
+        for symbol, entries in trade_cache.items()
+        if calculate_open_quantity(entries) > 0
+    }
+    risk_symbols = held_symbols | {
+        symbol for symbol, amount in pending_by_symbol.items() if amount > 0
+    }
+    attributed_symbols = set()
+    for symbol, asset in plan.get("assets", {}).items():
+        if any(
+            item.get("status") == STATUS_RECONCILED
+            and (item.get("actual") or {}).get("date")
+            and pd.Timestamp(item["actual"]["date"]) >= ATTRIBUTION_START
+            for item in asset.get("items", [])
+        ):
+            attributed_symbols.add(symbol)
+    comparison_symbols = {
+        COMPARATOR_BY_SYMBOL[symbol]
+        for symbol in attributed_symbols
+        if symbol in COMPARATOR_BY_SYMBOL
+    }
+    frames, unavailable = _review_price_frames(
+        risk_symbols | attributed_symbols | comparison_symbols | {"510300"},
+        refresh_token,
+    )
+
+    position_values = {}
+    for review_symbol in risk_symbols:
+        frame = frames.get(review_symbol)
+        latest_price = float(frame.iloc[-1]["close"]) if frame is not None and not frame.empty else None
+        open_quantity = calculate_open_quantity(trade_cache.get(review_symbol, []))
+        market_value = open_quantity * latest_price if latest_price is not None else 0.0
+        position_values[review_symbol] = market_value + pending_by_symbol.get(review_symbol, 0.0)
+
+    progress = {
+        symbol: {
+            "display_value": value,
+            "pending_estimate": pending_by_symbol.get(symbol, 0.0),
+        }
+        for symbol, value in position_values.items()
+    }
+    attribution_tab, risk_tab = st.tabs(["交易贡献", "组合风险"])
+
+    with attribution_tab:
+        st.caption(
+            "这里复盘计划交易的方向、ETF选择和执行时点，不等于账户总收益；"
+            "正式起算日后的数据会随着对账单逐步增加。"
+        )
+        rows = build_attribution_rows(plan, frames)
+        if not rows:
+            st.info("正式起算日之后暂时没有已对账的计划交易，先继续积累数据。")
+        else:
+            table = pd.DataFrame(
+                {
+                    "日期": [row["actual_date"] for row in rows],
+                    "标的": [row["name"] for row in rows],
+                    "执行": ["偏离计划" if row["execution_type"] == EXECUTION_DEVIATION else "按计划" for row in rows],
+                    "方向超额": [row["direction_excess_pct"] for row in rows],
+                    "ETF选择": [row["etf_selection_pct"] for row in rows],
+                    "择时金额": [row["timing_effect_amount"] for row in rows],
+                }
+            )
+            st.dataframe(
+                table,
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    "方向超额": st.column_config.NumberColumn(format="%+.2f%%"),
+                    "ETF选择": st.column_config.NumberColumn(format="%+.2f%%"),
+                    "择时金额": st.column_config.NumberColumn(format="¥%+.0f"),
+                },
+            )
+            st.caption("四层记分卡彼此独立，不强行相加为账户总收益；暂无可靠对照时显示为空。")
+
+    with risk_tab:
+        replay = run_pressure_replay(frames, position_values)
+        total_exposure = sum(position_values.values())
+        positive_loss = sum(
+            max(value, 0.0) for value in replay["cluster_losses"].values()
+        )
+        main_cluster, main_loss = (None, 0.0)
+        if replay["cluster_losses"]:
+            main_cluster, main_loss = max(
+                replay["cluster_losses"].items(),
+                key=lambda item: item[1],
+            )
+        main_cluster_share = (
+            main_loss / positive_loss * 100
+            if main_loss > 0 and positive_loss > 0
+            else 0.0
+        )
+
+        st.subheader("先看结论")
+        st.info(
+            "这是历史压力模拟，不是实际亏损，也不是预测："
+            f"把现在的持仓金额放进过去 {replay['sample_days']} 个共同交易日，"
+            "寻找最差的一段走势。"
+        )
+        exposure, pressure, budget = st.columns(3)
+        exposure.metric(
+            "现在投入的风险资产",
+            _money(total_exposure),
+            help=f"约占账户 {total_exposure / ACCOUNT_BASE_AMOUNT * 100:.1f}%；不含现金。",
+        )
+        pressure.metric("历史最差模拟回撤", _money(replay["pressure_loss"]))
+        budget.metric(
+            "回撤预警线已用",
+            f"{replay['budget_usage_pct']:.0f}%",
+            help=f"预警线 {_money(DRAWDOWN_BUDGET)}，约占账户15%。",
+        )
+        if replay["over_budget"]:
+            st.error(f"历史模拟回撤已超过 {_money(DRAWDOWN_BUDGET)} 预警线。")
+        elif replay["budget_usage_pct"] >= 80:
+            st.caption(
+                f"目前还没有超过 {_money(DRAWDOWN_BUDGET)} 预警线，但已经接近。"
+            )
+        if main_cluster and main_loss > 0:
+            st.warning(
+                f"主要风险来源：{main_cluster}，约贡献 {_money(main_loss)} 的模拟损失，"
+                f"占本次正向损失约 {main_cluster_share:.0f}%。"
+            )
+        if replay["sample_days"]:
+            st.caption(
+                f"最差区间：{replay['peak_date']} 至 {replay['trough_date']}。"
+            )
+
+        cluster_rows = build_cluster_exposure(progress)
+        if cluster_rows:
+            st.subheader("各类资产的模拟影响")
+            st.caption(
+                "“现在约有”包含已持有金额和已标记但尚未对账的买入；"
+                "负数表示这类资产在该段行情中起了缓冲作用。"
+            )
+            cluster_losses = replay["cluster_losses"]
+            st.dataframe(
+                pd.DataFrame(
+                    {
+                        "资产篮子": [row["cluster"] for row in cluster_rows],
+                        "现在约有": [row["value"] for row in cluster_rows],
+                        "占账户": [row["value"] / ACCOUNT_BASE_AMOUNT * 100 for row in cluster_rows],
+                        "历史最差模拟影响": [cluster_losses.get(row["cluster"], 0.0) for row in cluster_rows],
+                        "备注": [
+                            "；".join(
+                                part
+                                for part in [
+                                    f"待对账约 {_money(row['pending_estimate'])}"
+                                    if row["pending_estimate"]
+                                    else None,
+                                    "主要风险来源" if row["cluster"] == main_cluster and main_loss > 0 else None,
+                                    "该段行情起缓冲作用"
+                                    if cluster_losses.get(row["cluster"], 0.0) < 0
+                                    else None,
+                                ]
+                                if part
+                            ) or "—"
+                            for row in cluster_rows
+                        ],
+                    }
+                ),
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    "现在约有": st.column_config.NumberColumn(format="¥%.0f"),
+                    "占账户": st.column_config.NumberColumn(format="%.1f%%"),
+                    "历史最差模拟影响": st.column_config.NumberColumn(format="¥%+.0f"),
+                },
+            )
+        if unavailable:
+            st.caption(f"行情暂不可用：{'、'.join(unavailable)}；相关标的不进入本次压力回放。")
+
+
 if "refresh_token" not in st.session_state:
     st.session_state.refresh_token = 0
 
@@ -458,14 +728,14 @@ spec_by_symbol = {spec.symbol: spec for spec in specs}
 with st.sidebar:
     st.markdown("## 决策辅助")
     symbol = st.selectbox("标的", list(spec_by_symbol), format_func=lambda key: f"{spec_by_symbol[key].display_tier} · {spec_by_symbol[key].name}")
-    page = st.radio("页面", ["状态与图表", "复盘日志", "策略回测", "策略规则", "半年买入计划", "战略方向"])
+    page = st.radio("页面", ["状态与图表", "复盘日志", "策略回测", "策略规则", "半年买入计划", "组合复盘", "战略方向"])
     if st.button("刷新当前数据"):
         st.session_state.refresh_token += 1
     show_trades = st.checkbox("显示个人交易记录")
     uploaded_statement = st.file_uploader(
         "更新电子对账单（可选）",
         type=["xlsx"],
-        disabled=page == "战略方向" or (not show_trades and page != "半年买入计划"),
+        disabled=page == "战略方向" or (not show_trades and page not in {"半年买入计划", "组合复盘"}),
     )
     st.caption("解析后的记录会跨页面和重启保留；新对账单更新交易与现金，不会覆盖买入计划。")
 
@@ -493,23 +763,26 @@ if show_trades:
     if st.session_state.get("trade_cache_notice"):
         st.sidebar.success(st.session_state.trade_cache_notice)
 
-if page == "半年买入计划":
+if page in {"半年买入计划", "组合复盘"}:
     plan = load_purchase_plan()
     reconciled_plan = reconcile_purchase_plan(plan, trade_cache)
     if reconciled_plan != plan:
         save_purchase_plan(reconciled_plan)
-    latest_prices = {}
-    unavailable = []
-    for core_symbol in TARGETS:
-        try:
-            core_df = load_prepared_data(core_symbol, st.session_state.refresh_token)
-            latest_prices[core_symbol] = float(core_df.iloc[-1]["close"])
-        except Exception:
-            latest_prices[core_symbol] = None
-            unavailable.append(TARGETS[core_symbol]["name"])
-    if unavailable:
-        st.caption(f"暂未读取行情：{'、'.join(unavailable)}；计划格仍可正常标记。")
-    _render_purchase_plan(reconciled_plan, trade_cache, latest_prices, load_account_snapshot())
+    if page == "组合复盘":
+        _render_portfolio_review(reconciled_plan, trade_cache, st.session_state.refresh_token)
+    else:
+        latest_prices = {}
+        unavailable = []
+        for core_symbol in TARGETS:
+            try:
+                core_df = load_prepared_data(core_symbol, st.session_state.refresh_token)
+                latest_prices[core_symbol] = float(core_df.iloc[-1]["close"])
+            except Exception:
+                latest_prices[core_symbol] = None
+                unavailable.append(TARGETS[core_symbol]["name"])
+        if unavailable:
+            st.caption(f"暂未读取行情：{'、'.join(unavailable)}；计划格仍可正常标记。")
+        _render_purchase_plan(reconciled_plan, trade_cache, latest_prices, load_account_snapshot())
 else:
     try:
         df = load_prepared_data(symbol, st.session_state.refresh_token)

@@ -45,13 +45,14 @@ class TradeStatementTests(unittest.TestCase):
             ["20260716", "人民币", "private", "561380", "电网设备", "证券卖出", 1000, 0.723, 0, 0, 0, 723, 9723],
             ["20260716", "人民币", "private", "516150", "稀土ETF", "证券买入", 1000, 1.674, 0, 0, 0, -1674, 8049],
             ["20260716", "人民币", "private", "159570", "创新药ETF", "证券买入", 1000, 1.458, 0, 0, 0, -1458, 6591],
+            ["20260716", "人民币", "private", "159755", "电池ETF", "证券买入", 1000, 0.919, 0, 0, 0, -919, 5672],
         ]
 
         parsed = parse_trade_dataframe(pd.DataFrame(rows))
 
         self.assertEqual(
             set(parsed),
-            {"159995", "159819", "561380", "516150", "159570"},
+            {"159995", "159819", "561380", "516150", "159570", "159755"},
         )
 
     def test_chip_split_normalizes_pre_split_trade_prices_and_quantities(self):

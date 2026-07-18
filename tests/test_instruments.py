@@ -71,6 +71,19 @@ class InstrumentRegistryTests(unittest.TestCase):
         self.assertEqual(ai.display_tier, "观察")
         self.assertEqual(get_instrument("510300").display_tier, "核心")
 
+    def test_battery_is_available_as_an_alternate_without_strategy_rules(self):
+        battery = get_instrument("159755")
+
+        self.assertEqual(battery.name, "电池 ETF")
+        self.assertEqual(battery.market, "CN")
+        self.assertTrue(battery.is_alternate)
+        self.assertFalse(battery.is_focus)
+        self.assertEqual(battery.display_tier, "候补")
+        self.assertFalse(battery.is_core)
+        self.assertFalse(battery.supports_campaign)
+        self.assertFalse(battery.supports_backtest)
+        self.assertIn(battery, list_instruments(include_experimental=True))
+
     def test_unknown_symbol_is_rejected(self):
         with self.assertRaises(ValueError):
             get_instrument("UNKNOWN")

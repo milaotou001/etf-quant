@@ -16,6 +16,8 @@ CURRENT_PLAN_VERSION = 6
 STATUS_PLANNED = "planned"
 STATUS_PENDING = "pending_reconciliation"
 STATUS_RECONCILED = "reconciled"
+EXECUTION_ON_PLAN = "on_plan"
+EXECUTION_DEVIATION = "deviation"
 
 TARGETS = {
     "563360": {"name": "A500", "target": 42_000.0, "color": "#2f855a", "soft_color": "#dcefe5"},
@@ -73,6 +75,8 @@ def _new_item(symbol: str, number: int, amount: float, planned_date: str | None 
         "confirmed_dates": [],
         "actual": None,
         "needs_confirmation": False,
+        "execution_type": None,
+        "deviation_reason": None,
     }
 
 
@@ -271,6 +275,8 @@ def mark_item_bought(
     item_id: str,
     confirmed_date: str,
     split_dates: list[str] | None = None,
+    execution_type: str = EXECUTION_ON_PLAN,
+    deviation_reason: str | None = None,
 ) -> dict:
     updated = copy.deepcopy(plan)
     item = _find_item(updated, item_id)
@@ -279,11 +285,15 @@ def mark_item_bought(
     dates = [str(value) for value in (split_dates or [confirmed_date]) if value]
     if not dates:
         raise ValueError("至少需要一个买入日期")
+    if execution_type not in {EXECUTION_ON_PLAN, EXECUTION_DEVIATION}:
+        raise ValueError("执行类型必须是按计划或偏离计划")
     item["status"] = STATUS_PENDING
     item["confirmed_date"] = dates[0]
     item["confirmed_dates"] = dates
     item["actual"] = None
     item["needs_confirmation"] = False
+    item["execution_type"] = execution_type
+    item["deviation_reason"] = deviation_reason if execution_type == EXECUTION_DEVIATION else None
     return updated
 
 
@@ -297,6 +307,8 @@ def undo_item_mark(plan: dict, item_id: str) -> dict:
     item["confirmed_dates"] = []
     item["actual"] = None
     item["needs_confirmation"] = False
+    item["execution_type"] = None
+    item["deviation_reason"] = None
     return updated
 
 

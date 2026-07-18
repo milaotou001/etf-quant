@@ -270,6 +270,22 @@ class PurchasePlanStateTests(unittest.TestCase):
 
         self.assertEqual(plan["assets"]["510300"]["items"][0]["status"], STATUS_PLANNED)
 
+    def test_marking_records_whether_execution_followed_the_plan(self):
+        plan = default_purchase_plan()
+        item_id = plan["assets"]["561380"]["items"][0]["id"]
+
+        marked = mark_item_bought(
+            plan,
+            item_id,
+            "2026-07-18",
+            execution_type="deviation",
+            deviation_reason="临时提前执行",
+        )
+
+        item = marked["assets"]["561380"]["items"][0]
+        self.assertEqual(item["execution_type"], "deviation")
+        self.assertEqual(item["deviation_reason"], "临时提前执行")
+
 
 class PurchasePlanReconciliationTests(unittest.TestCase):
     def test_split_fills_are_aggregated_into_one_plan_item(self):

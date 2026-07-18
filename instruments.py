@@ -14,6 +14,7 @@ class InstrumentSpec:
     rsi_confirmation: int | None = None
     requires_verified_amount: bool = False
     is_focus: bool = False
+    is_alternate: bool = False
 
     @property
     def display_tier(self) -> str:
@@ -21,6 +22,8 @@ class InstrumentSpec:
             return "核心"
         if self.is_focus:
             return "重点"
+        if self.is_alternate:
+            return "候补"
         return "观察"
 
     @property
@@ -42,6 +45,7 @@ _INSTRUMENTS = (
     InstrumentSpec("561380", "电网设备 ETF", "CN", "重点观察", False, is_focus=True),
     InstrumentSpec("516150", "稀土 ETF", "CN", "重点观察", False, is_focus=True),
     InstrumentSpec("159570", "港股创新药 ETF", "CN", "重点观察", False, is_focus=True),
+    InstrumentSpec("159755", "电池 ETF", "CN", "候补观察", False, is_alternate=True),
     InstrumentSpec("159995", "芯片 ETF", "CN", "实验观察", False),
     InstrumentSpec("159819", "人工智能 ETF", "CN", "实验观察", False),
     InstrumentSpec("513180", "恒生科技", "HK", "实验观察", False),

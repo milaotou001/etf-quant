@@ -77,15 +77,17 @@
 ## 环境与部署
 
 - 本地页面：Streamlit `http://127.0.0.1:8501`
-- 计划部署平台：Streamlit Community Cloud 私有应用
-- 生产地址：待首次部署后回填
+- 部署平台：Streamlit Community Cloud 私有应用
+- 生产地址：`https://etf-quant-a7nnp8ivteczzex5pwxaqs.streamlit.app/`
+- 访问方式：仅 Streamlit 登录后的达达账号可查看；未登录访问会重定向到 Streamlit 鉴权页
+- GitHub 可见性：代码仓库公开，生产应用保持私有；私人计划、对账单、照片和交易缓存均不进入仓库
 - 云端入口：`app.py`
 - 云端运行时：Python 3.11 / Streamlit 1.58.0
 - 运行模式：本地默认完整模式；云端通过 `MOBILE_READ_ONLY=true` 开启只读模式
 - 云端范围：行情、日线 RSI、图表和半年买入计划只读快照
 - 计划同步：本机计划编码后手动更新 Streamlit Secret，不自动双向同步
 - 回退：若云端长期无法稳定访问国内行情源，再迁移到阿里云常驻 Streamlit
-- CI/CD：第一版不新增工作流，由 Streamlit Community Cloud 连接私有 GitHub 分支部署
+- CI/CD：不新增工作流；Streamlit Community Cloud 连接 GitHub `master` 自动部署
 
 ## 外部服务与数据
 
@@ -97,6 +99,7 @@
 ## 已确认决策
 
 - 2026-07-18：手机访问采用 Streamlit Community Cloud 私有只读应用，不部署到 Vercel；云端只显示行情、RSI、图表和当前计划，不开放对账上传、买入标记、日志写入或其他私人数据修改功能。
+- 2026-07-18：为避免授予 Streamlit 对 GitHub 私有仓库的宽范围 `repo` 权限，代码仓库保持公开，生产应用单独设为“仅指定人员可查看”；计划数据只通过 Streamlit Secret 注入。
 - 2026-06-27：采用 `standard` 工作流模式。
 - 2026-06-27：使用 akshare 获取免费数据，不接入券商 API。
 - 2026-06-27：本地运行，不做 Web 服务，不部署。

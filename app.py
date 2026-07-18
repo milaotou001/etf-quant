@@ -3,6 +3,7 @@ from datetime import date
 import hashlib
 import html
 import os
+from pathlib import Path
 import pandas as pd
 import streamlit as st
 
@@ -22,6 +23,7 @@ from mobile_view import (
     MobileViewConfigError,
     is_mobile_read_only,
     load_mobile_plan,
+    load_mobile_trades,
     mobile_page_options,
     plan_price_symbols,
     primary_metric_order,
@@ -43,6 +45,7 @@ from purchase_plan import (
     STATUS_PLANNED,
     STATUS_RECONCILED,
     TARGETS,
+    PURCHASE_PLAN_PATH,
     build_position_progress,
     calculate_open_quantity,
     load_purchase_plan,
@@ -53,6 +56,7 @@ from purchase_plan import (
     summarize_plan,
     undo_item_mark,
 )
+from scripts.export_mobile_plan_secret import DEFAULT_TARGET, export_secret_file
 from trades import load_account_snapshot, load_trade_cache, update_trade_cache
 from etf_shares import SHARE_OBSERVATION_ENABLED, load_share_observation
 
@@ -796,6 +800,7 @@ if page == "战略方向":
     st.stop()
 
 trade_cache = {}
+mobile_trade_cache = load_mobile_trades(os.environ) if MOBILE_READ_ONLY else {}
 if not MOBILE_READ_ONLY:
     trade_cache = load_trade_cache()
     if uploaded_statement is not None:
@@ -810,11 +815,30 @@ if not MOBILE_READ_ONLY:
         else:
             trade_cache = load_trade_cache()
 
-trades = trade_cache.get(symbol) if show_trades else None
+    if show_trades:
+        if st.sidebar.button("生成手机同步包"):
+            try:
+                export_secret_file(Path(PURCHASE_PLAN_PATH), DEFAULT_TARGET, trade_cache)
+                st.session_state.mobile_export_notice = "手机同步包已生成；更新云端 Secret 后，手机即可看到最新交易点。"
+            except Exception as exc:
+                st.session_state.mobile_export_notice = f"手机同步包生成失败：{exc}"
+        if st.session_state.get("mobile_export_notice"):
+            st.sidebar.info(st.session_state.mobile_export_notice)
+
+trades = (
+    mobile_trade_cache.get(symbol)
+    if MOBILE_READ_ONLY
+    else trade_cache.get(symbol) if show_trades else None
+)
 if show_trades:
     st.sidebar.caption(f"本机已保存 {len(trade_cache)} 个标的的交易记录。")
     if st.session_state.get("trade_cache_notice"):
         st.sidebar.success(st.session_state.trade_cache_notice)
+elif MOBILE_READ_ONLY:
+    if mobile_trade_cache:
+        st.sidebar.caption("已同步个人交易点；图表中的圆点仅用于复盘。")
+    else:
+        st.sidebar.caption("暂无已同步交易点；RSI 和计划仍可正常查看。")
 
 if page == "半年买入计划":
     if MOBILE_READ_ONLY:

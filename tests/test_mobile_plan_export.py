@@ -9,7 +9,7 @@ from pathlib import Path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
-from mobile_view import load_mobile_plan
+from mobile_view import load_mobile_plan, load_mobile_trades
 from purchase_plan import default_purchase_plan, save_purchase_plan
 from scripts.export_mobile_plan_secret import build_secrets_toml, export_secret_file
 
@@ -20,6 +20,21 @@ class MobilePlanExportTests(unittest.TestCase):
         parsed = tomllib.loads(build_secrets_toml(plan))
         self.assertEqual(parsed["MOBILE_READ_ONLY"], "true")
         self.assertEqual(load_mobile_plan(parsed), plan)
+        self.assertEqual(load_mobile_trades(parsed), {})
+
+    def test_generated_toml_includes_chart_only_trade_snapshot(self):
+        plan = default_purchase_plan()
+        trades = {
+            "563360": [
+                {"date": "2026-07-01", "type": "buy", "price": 1.0, "qty": 100, "amount": 100.0}
+            ]
+        }
+        parsed = tomllib.loads(build_secrets_toml(plan, trades))
+        self.assertEqual(
+            load_mobile_trades(parsed),
+            {"563360": [{"date": "2026-07-01", "type": "buy", "price": 1.0, "qty": 100}]},
+        )
+        self.assertNotIn("amount", parsed["TRADES_B64"])
 
     def test_export_refuses_a_missing_private_plan(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -40,6 +55,7 @@ class MobilePlanExportTests(unittest.TestCase):
                 load_mobile_plan(tomllib.loads(target.read_text(encoding="utf-8"))),
                 plan,
             )
+            self.assertEqual(load_mobile_trades(tomllib.loads(target.read_text(encoding="utf-8"))), {})
 
 
 if __name__ == "__main__":

@@ -11,8 +11,10 @@ sys.path.insert(0, PROJECT_ROOT)
 from mobile_view import (
     MobileViewConfigError,
     encode_plan_snapshot,
+    encode_trade_snapshot,
     is_mobile_read_only,
     load_mobile_plan,
+    load_mobile_trades,
     mobile_page_options,
     primary_metric_order,
 )
@@ -69,6 +71,52 @@ class MobileViewTests(unittest.TestCase):
         plan["version"] = CURRENT_PLAN_VERSION + 1
         with self.assertRaisesRegex(MobileViewConfigError, "版本"):
             encode_plan_snapshot(plan)
+
+    def test_trade_snapshot_round_trip_keeps_only_chart_fields(self):
+        trades = {
+            "563360": [
+                {
+                    "date": "2026-07-01",
+                    "type": "buy",
+                    "price": 1.2345,
+                    "qty": 1200,
+                    "amount": 1481.4,
+                    "account_id": "must-not-leak",
+                },
+                {
+                    "date": "2026-07-10",
+                    "type": "sell_profit",
+                    "price": 1.3,
+                    "qty": 500,
+                    "amount": 650.0,
+                },
+            ]
+        }
+
+        encoded = encode_trade_snapshot(trades)
+        decoded = load_mobile_trades({"TRADES_B64": encoded})
+
+        self.assertEqual(
+            decoded,
+            {
+                "563360": [
+                    {"date": "2026-07-01", "type": "buy", "price": 1.2345, "qty": 1200},
+                    {"date": "2026-07-10", "type": "sell_profit", "price": 1.3, "qty": 500},
+                ]
+            },
+        )
+        self.assertNotIn("must-not-leak", encoded)
+        self.assertNotIn("amount", decoded["563360"][0])
+
+    def test_missing_or_invalid_trade_snapshot_degrades_to_empty(self):
+        self.assertEqual(load_mobile_trades({}), {})
+        self.assertEqual(load_mobile_trades({"TRADES_B64": "not-base64"}), {})
+
+    def test_invalid_trade_type_is_rejected_when_exporting(self):
+        with self.assertRaisesRegex(MobileViewConfigError, "type"):
+            encode_trade_snapshot(
+                {"563360": [{"date": "2026-07-01", "type": "unknown", "price": 1.0, "qty": 100}]}
+            )
 
 
 if __name__ == "__main__":

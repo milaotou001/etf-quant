@@ -53,6 +53,15 @@ class MobileAppModeTests(unittest.TestCase):
             self.source,
         )
 
+    def test_cloud_main_view_loads_synced_trade_points(self):
+        self.assertIn("load_mobile_trades(os.environ)", self.source)
+        self.assertIn("mobile_trade_cache.get(symbol)", self.source)
+        self.assertIn("暂无已同步交易点", self.source)
+
+    def test_local_mode_has_mobile_snapshot_export_entry(self):
+        self.assertIn("生成手机同步包", self.source)
+        self.assertIn("export_secret_file", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

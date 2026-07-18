@@ -42,6 +42,8 @@ class MobileAppModeTests(unittest.TestCase):
     def test_mobile_css_and_read_only_plan_card_exist(self):
         self.assertIn("@media (max-width: 700px)", self.source)
         self.assertIn(".plan-cell-readonly", self.source)
+        self.assertIn(".plan-cell-readonly *", self.source)
+        self.assertIn("color: #101828 !important", self.source)
         self.assertIn("grid-template-columns: 1fr", self.source)
 
     def test_cloud_data_failure_is_explicit(self):

@@ -87,7 +87,8 @@ st.markdown(
       .cash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
       .cash-label { color: #667085; font-size: .82rem; }
       .cash-value { color: #101828; font-weight: 720; font-size: 1.08rem; margin-top: .15rem; }
-      .plan-cell-readonly { border: 1px solid #e4e7ec; border-left: 4px solid #1b6b5c; border-radius: .55rem; padding: .75rem .85rem; margin: .45rem 0; background: #fff; line-height: 1.45; }
+      .plan-cell-readonly { border: 1px solid #e4e7ec; border-left: 4px solid #1b6b5c; border-radius: .55rem; padding: .75rem .85rem; margin: .45rem 0; background: #fff; color: #101828 !important; line-height: 1.45; }
+      .plan-cell-readonly * { color: #101828 !important; }
       @media (max-width: 700px) {
         .block-container { max-width: 100%; padding: 1rem .75rem 3rem; }
         .asset-head, .progress-meta, .progress-foot { display: grid; grid-template-columns: 1fr; gap: .25rem; }

@@ -2,6 +2,7 @@
 from datetime import date
 import hashlib
 import html
+import json
 import os
 from pathlib import Path
 import pandas as pd
@@ -23,9 +24,7 @@ from mobile_view import (
     MobileViewConfigError,
     is_mobile_read_only,
     load_mobile_plan,
-    load_mobile_plan_from_snapshot,
     load_mobile_trades,
-    load_mobile_trades_from_snapshot,
     mobile_page_options,
     plan_price_symbols,
     primary_metric_order,
@@ -813,7 +812,14 @@ if page == "战略方向":
 
 trade_cache = {}
 if MOBILE_READ_ONLY:
-    mobile_trade_cache = load_mobile_trades_from_snapshot() or load_mobile_trades(os.environ)
+    _snap_dir = os.path.join(os.path.dirname(__file__), "mobile")
+    _trades_path = os.path.join(_snap_dir, "trades_snapshot.json")
+    try:
+        with open(_trades_path, "r", encoding="utf-8") as _fh:
+            _snap = json.load(_fh)
+        mobile_trade_cache = _snap.get("symbols", {})
+    except Exception:
+        mobile_trade_cache = load_mobile_trades(os.environ)
 else:
     mobile_trade_cache = {}
 if not MOBILE_READ_ONLY:
@@ -859,9 +865,14 @@ elif MOBILE_READ_ONLY:
 
 if page == "半年买入计划":
     if MOBILE_READ_ONLY:
+        _snap_dir = os.path.join(os.path.dirname(__file__), "mobile")
+        _plan_path = os.path.join(_snap_dir, "plan_snapshot.json")
         try:
-            display_plan = load_mobile_plan_from_snapshot()
-        except MobileViewConfigError:
+            with open(_plan_path, "r", encoding="utf-8") as _fh:
+                display_plan = json.load(_fh)
+        except Exception:
+            display_plan = None
+        if display_plan is None:
             try:
                 display_plan = load_mobile_plan(os.environ)
             except MobileViewConfigError as exc:

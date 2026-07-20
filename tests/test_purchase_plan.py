@@ -31,16 +31,17 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
         plan = default_purchase_plan()
 
         expected = {
-            "561380": ([1_200.0, 1_800.0, 3_000.0], 6_000.0),
-            "516150": ([1_000.0, 1_500.0, 2_500.0], 5_000.0),
-            "159570": ([800.0, 1_200.0, 2_000.0], 4_000.0),
+            "561380": ([1_200.0, 1_800.0, 3_000.0, 800.0, 1_200.0, 2_000.0], 10_000.0, "第1轮：等止跌/回踩/右侧 · 第2轮：等半年报验证利润来源"),
+            "516150": ([1_500.0, 2_500.0, 4_000.0], 8_000.0, "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复"),
+            "159570": ([1_500.0, 2_500.0, 4_000.0], 8_000.0, "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复"),
+            "560860": ([720.0, 1_080.0, 1_800.0, 480.0, 720.0, 1_200.0], 6_000.0, "第1轮：等止跌/回踩/右侧 · 第2轮：等Q3铜价趋势确认"),
+            "513180": ([1_000.0, 1_500.0, 2_500.0, 600.0, 900.0, 1_500.0], 8_000.0, "第1轮：等RSI 30-35/回踩/右侧 · 第2轮：留弹药应对港股闪崩"),
         }
-        expected_note = "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复"
-        for symbol, (amounts, reserved_amount) in expected.items():
+        for symbol, (amounts, reserved_amount, plan_note) in expected.items():
             asset = plan["assets"][symbol]
             self.assertEqual([item["planned_amount"] for item in asset["items"]], amounts)
             self.assertEqual(asset["reserved_amount"], reserved_amount)
-            self.assertEqual(asset["plan_note"], expected_note)
+            self.assertEqual(asset["plan_note"], plan_note)
 
         self.assertEqual(
             plan["allocation_scheme"]["strategic_satellite"],
@@ -56,9 +57,11 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
         self.assertEqual(len(plan["assets"]["510300"]["items"]), 3)
         self.assertEqual(len(plan["assets"]["518880"]["items"]), 12)
         self.assertEqual(len(plan["assets"]["588000"]["items"]), 6)
-        self.assertEqual(len(plan["assets"]["561380"]["items"]), 3)
+        self.assertEqual(len(plan["assets"]["561380"]["items"]), 6)
         self.assertEqual(len(plan["assets"]["516150"]["items"]), 3)
         self.assertEqual(len(plan["assets"]["159570"]["items"]), 3)
+        self.assertEqual(len(plan["assets"]["560860"]["items"]), 6)
+        self.assertEqual(len(plan["assets"]["513180"]["items"]), 6)
         expected_wide_amounts = [3_750.0, 3_750.0, 3_750.0]
         self.assertEqual(
             [item["planned_amount"] for item in plan["assets"]["563360"]["items"]],
@@ -80,16 +83,18 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
                 "510300": 42_000.0,
                 "518880": 57_000.0,
                 "588000": 28_500.0,
-                "561380": 12_000.0,
-                "516150": 10_000.0,
+                "561380": 10_000.0,
+                "516150": 8_000.0,
                 "159570": 8_000.0,
+                "560860": 6_000.0,
+                "513180": 8_000.0,
             },
         )
         self.assertEqual(sum(targets.values()) + plan["cash_target"], plan["base_amount"])
         self.assertTrue(
             all(
                 item["status"] == STATUS_PLANNED
-                for symbol in ("561380", "516150", "159570")
+                for symbol in ("561380", "516150", "159570", "560860", "513180")
                 for item in plan["assets"][symbol]["items"]
             )
         )
@@ -153,9 +158,11 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
             )
             self.assertEqual(loaded["assets"][symbol]["target"], 42_000.0)
             self.assertEqual(loaded["assets"][symbol]["plan_note"], "第三笔等待右侧确认")
-        self.assertEqual(loaded["assets"]["561380"]["target"], 12_000.0)
+        self.assertEqual(loaded["assets"]["561380"]["target"], 10_000.0)
         self.assertIn("516150", loaded["assets"])
         self.assertIn("159570", loaded["assets"])
+        self.assertIn("560860", loaded["assets"])
+        self.assertIn("513180", loaded["assets"])
 
     def test_version_two_plan_adds_grid_without_changing_existing_records(self):
         plan = default_purchase_plan()
@@ -175,7 +182,7 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
         self.assertIn("159570", loaded["assets"])
         self.assertEqual(
             [item["planned_amount"] for item in loaded["assets"]["561380"]["items"]],
-            [1_200.0, 1_800.0, 3_000.0],
+            [1_200.0, 1_800.0, 3_000.0, 800.0, 1_200.0, 2_000.0],
         )
         self.assertEqual(loaded["assets"]["563360"]["items"][0]["status"], STATUS_PENDING)
         self.assertEqual(loaded["assets"]["563360"]["items"][0]["confirmed_date"], "2026-07-13")
@@ -214,7 +221,7 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
                 "status": STATUS_PENDING if item["number"] == 1 else STATUS_PLANNED,
                 "confirmed_date": "2026-07-17" if item["number"] == 1 else None,
             }
-            for item, old_amount in zip(asset["items"], [3_000.0, 1_500.0, 1_500.0])
+            for item, old_amount in zip(asset["items"], [3_000.0, 1_500.0, 1_500.0, 1_500.0, 1_500.0, 1_500.0])
         ]
 
         with tempfile.TemporaryDirectory() as directory:
@@ -226,7 +233,7 @@ class PurchasePlanDefaultsTests(unittest.TestCase):
         self.assertEqual(loaded["version"], 6)
         self.assertEqual(
             [item["planned_amount"] for item in migrated],
-            [3_000.0, 1_800.0, 3_000.0],
+            [3_000.0, 1_800.0, 3_000.0, 800.0, 1_200.0, 2_000.0],
         )
         self.assertEqual(migrated[0]["status"], STATUS_PENDING)
         self.assertEqual(migrated[0]["confirmed_date"], "2026-07-17")
@@ -396,9 +403,9 @@ class PurchasePlanProgressTests(unittest.TestCase):
 
         summary = summarize_plan(plan)
 
-        self.assertEqual(summary["planned_total"], 82_815.0)
+        self.assertEqual(summary["planned_total"], 107_815.0)
         self.assertEqual(summary["confirmed_amount"], 2_500.0)
-        self.assertEqual(summary["remaining_amount"], 80_315.0)
+        self.assertEqual(summary["remaining_amount"], 105_315.0)
 
 
 if __name__ == "__main__":

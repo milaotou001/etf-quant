@@ -540,6 +540,16 @@ def _render_purchase_plan(
 
     _render_financial_report_check()
 
+    with st.expander("三笔节奏说明：止跌 → 回踩 → 修复"):
+        st.markdown(
+            "<div style='font-size:0.9rem;line-height:1.7'>"
+            "<b>第1笔 · 等止跌</b>：价格不再创新低，连续几天横盘或不再破前低——跌势刹车。<br>"
+            "<b>第2笔 · 等回踩确认</b>：止跌后小幅反弹，再回落靠近前低。不破前低说明有人愿意接，比追反弹安全。<br>"
+            "<b>第3笔 · 等右侧修复</b>：放量回到重要均线上方，均线从向下压转为走平或向上拐——牺牲一点价格换确定性。"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
     st.subheader("计划与实际成交")
     if read_only:
         st.caption("手机只读快照 · ◇ 计划中　◐ 已买入·待对账　✓ 已对账")
@@ -901,7 +911,3 @@ else:
         )
     elif page == "复盘日志":
         _render_journal(df, spec)
-    elif page == "策略回测":
-        _render_backtest(df, spec)
-    else:
-        _render_rules(spec)

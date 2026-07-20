@@ -31,7 +31,7 @@ class PolicyPageTests(unittest.TestCase):
 
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(app.title[0].value, "战略方向")
-        self.assertIn("年度战略白名单尚未发布", app.info[0].value)
+        self.assertIn("当前7个方向", app.info[0].value)
         visible_text = " ".join(
             element.value
             for collection in (app.markdown, app.caption, app.subheader)
@@ -40,14 +40,10 @@ class PolicyPageTests(unittest.TestCase):
         self.assertIn("年度方向", visible_text)
         self.assertIn("ETF匹配", visible_text)
         self.assertIn("政策证据审核", visible_text)
-        self.assertIn("地方覆盖：已查10/10个重点地区｜8地发现落地｜覆盖充分", visible_text)
-        self.assertIn("2地本轮未见强证据，0地未检索", visible_text)
-        self.assertIn("落地覆盖7个省级辖区", visible_text)
-        self.assertIn("查看地方覆盖明细", [item.label for item in app.expander])
-        self.assertIn("粤芯四期列入重大项目建设", visible_text)
-        self.assertIn("晶合四期加速落地", visible_text)
-        self.assertIn("地方扩产与项目证据已形成多地交叉验证", visible_text)
-        self.assertNotIn("地方资金和项目证据仍待补齐", visible_text)
+        self.assertIn("地方覆盖：已查10/10个重点地区", visible_text)
+        self.assertIn("创新药", visible_text)
+        self.assertIn("电网设备", visible_text)
+        self.assertIn("稀土", visible_text)
         self.assertNotIn("地方没有落地", visible_text)
         self.assertNotIn("产业候选档案", visible_text)
         self.assertEqual(len(app.tabs), 0)
@@ -59,7 +55,7 @@ class PolicyPageTests(unittest.TestCase):
                     if button.label == "确认方向、地方证据与ETF"
                 ]
             ),
-            3,
+            5,
         )
 
     def test_clicking_confirm_persists_user_review(self):
@@ -81,7 +77,7 @@ class PolicyPageTests(unittest.TestCase):
 
         self.assertEqual(
             FULL_PAGE_OPTIONS,
-            ["状态与图表", "复盘日志", "策略回测", "策略规则", "半年买入计划", "组合复盘", "战略方向"],
+            ["状态与图表", "复盘日志", "半年买入计划", "组合复盘", "战略方向"],
         )
         self.assertIn("mobile_page_options(MOBILE_READ_ONLY)", source)
         self.assertIn('if page == "战略方向":', source)

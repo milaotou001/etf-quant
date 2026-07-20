@@ -35,11 +35,14 @@ def _render_directions(snapshot: dict) -> None:
     formal.metric("正式方向", len(snapshot["formal_directions"]))
     draft.metric("候选草案", len(snapshot["directions"]) - len(snapshot["formal_directions"]))
     pending.metric("待确认政策证据", snapshot["pending_confirmation_count"])
-    st.caption("只保留本轮最接近入选条件的3个方向；后台35项候选目录不在日常页面展开。")
+    st.caption("按产业证据强度和 RSI 位置排序；暂停方向折叠显示。")
 
-    for direction in snapshot["directions"]:
+    for direction in sorted(snapshot["directions"], key=lambda d: d.get("priority", 99)):
         with st.container(border=True):
+            status_note = direction.get("status_note", "")
             st.markdown(f"### {direction['name']}　`{direction['status']}`")
+            if status_note:
+                st.caption(f"⚡ {status_note}")
             st.write(direction["reason"])
             st.caption(f"资金阶段：{direction['funding_stage']}")
             st.caption(direction["coverage"]["display"])
@@ -197,11 +200,11 @@ def render_policy_strategy(review_path: str | Path = REVIEW_PATH) -> None:
     snapshot = build_policy_snapshot(reviews)
 
     st.title("战略方向")
-    st.caption("政策定方向，RSI只负责等待合适位置")
+    st.caption("政策定方向，RSI负责等待合适位置")
     if snapshot["formal_directions"]:
         st.success(f"当前已有{len(snapshot['formal_directions'])}个正式战略方向。")
     else:
-        st.info("年度战略白名单尚未发布。当前3个方向均为草案，等待政策证据和ETF映射双确认。")
+        st.info("当前7个方向：5个产业卫星（创新药/电网/稀土/有色/恒生科技）+2个保留观察（集成电路/AI暂停中）。按H1产业证据强度排序，RSI到位时创新药为第一顺位。")
 
     _render_directions(snapshot)
     _render_etf_matches(snapshot, review_path)

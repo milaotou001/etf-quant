@@ -34,8 +34,6 @@ class MobileViewTests(unittest.TestCase):
             [
                 "状态与图表",
                 "复盘日志",
-                "策略回测",
-                "策略规则",
                 "半年买入计划",
                 "组合复盘",
                 "战略方向",

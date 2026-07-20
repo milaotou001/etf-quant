@@ -66,7 +66,9 @@ def normalize_known_corporate_actions(df: pd.DataFrame, symbol: str) -> pd.DataF
         if column in adjusted.columns:
             adjusted.loc[before_split, column] = adjusted.loc[before_split, column] / ratio
     if "volume" in adjusted.columns:
-        adjusted.loc[before_split, "volume"] = adjusted.loc[before_split, "volume"] * ratio
+        adjusted.loc[before_split, "volume"] = (
+            (adjusted.loc[before_split, "volume"] * ratio).round().astype("int64")
+        )
 
     adjusted.attrs.update(df.attrs)
     adjusted.attrs["corporate_action_adjustment"] = (

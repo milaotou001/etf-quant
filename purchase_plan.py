@@ -23,10 +23,12 @@ TARGETS = {
     "563360": {"name": "A500", "target": 42_000.0, "color": "#2f855a", "soft_color": "#dcefe5"},
     "510300": {"name": "沪深300", "target": 42_000.0, "color": "#2563eb", "soft_color": "#dbeafe"},
     "518880": {"name": "黄金", "target": 57_000.0, "color": "#d69e2e", "soft_color": "#f9edc7"},
-    "588000": {"name": "科创50", "target": 28_500.0, "color": "#7c3aed", "soft_color": "#ede9fe"},
-    "561380": {"name": "电网设备", "target": 12_000.0, "color": "#0891b2", "soft_color": "#cffafe"},
-    "516150": {"name": "稀土", "target": 10_000.0, "color": "#c2410c", "soft_color": "#ffedd5"},
+    "561380": {"name": "电网设备", "target": 10_000.0, "color": "#0891b2", "soft_color": "#cffafe"},
+    "516150": {"name": "稀土", "target": 8_000.0, "color": "#c2410c", "soft_color": "#ffedd5"},
     "159570": {"name": "港股创新药", "target": 8_000.0, "color": "#db2777", "soft_color": "#fce7f3"},
+    "560860": {"name": "工业有色", "target": 6_000.0, "color": "#b45309", "soft_color": "#fef3c7"},
+    "513180": {"name": "恒生科技", "target": 8_000.0, "color": "#0d9488", "soft_color": "#ccfbf1"},
+    "588000": {"name": "科创50（暂停）", "target": 28_500.0, "color": "#7c3aed", "soft_color": "#ede9fe"},
 }
 
 WIDE_ETF_ALLOCATION = {"first": 0.5, "second": 0.25, "third": 0.25}
@@ -38,19 +40,42 @@ STRATEGIC_SATELLITE_ALLOCATION = {"first": 0.2, "second": 0.3, "third": 0.5}
 STRATEGIC_PLAN_NOTE = "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复"
 STRATEGIC_PLANS = {
     "561380": {
-        "current_round": (1_200.0, 1_800.0, 3_000.0),
-        "reserved_amount": 6_000.0,
-        "plan_note": STRATEGIC_PLAN_NOTE,
+        "rounds": [
+            (1_200.0, 1_800.0, 3_000.0),
+            (800.0, 1_200.0, 2_000.0),
+        ],
+        "reserved_amount": 10_000.0,
+        "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等半年报验证利润来源",
     },
     "516150": {
-        "current_round": (1_000.0, 1_500.0, 2_500.0),
-        "reserved_amount": 5_000.0,
+        "rounds": [
+            (1_500.0, 2_500.0, 4_000.0),
+        ],
+        "reserved_amount": 8_000.0,
         "plan_note": STRATEGIC_PLAN_NOTE,
     },
     "159570": {
-        "current_round": (800.0, 1_200.0, 2_000.0),
-        "reserved_amount": 4_000.0,
+        "rounds": [
+            (1_500.0, 2_500.0, 4_000.0),
+        ],
+        "reserved_amount": 8_000.0,
         "plan_note": STRATEGIC_PLAN_NOTE,
+    },
+    "560860": {
+        "rounds": [
+            (720.0, 1_080.0, 1_800.0),
+            (480.0, 720.0, 1_200.0),
+        ],
+        "reserved_amount": 6_000.0,
+        "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等Q3铜价趋势确认",
+    },
+    "513180": {
+        "rounds": [
+            (1_000.0, 1_500.0, 2_500.0),
+            (600.0, 900.0, 1_500.0),
+        ],
+        "reserved_amount": 8_000.0,
+        "plan_note": "第1轮：等RSI 30-35/回踩/右侧 · 第2轮：留弹药应对港股闪崩",
     },
 }
 
@@ -87,13 +112,16 @@ def _strategic_asset(symbol: str, existing: dict | None = None) -> dict:
         for item in (existing or {}).get("items", [])
     }
     items = []
-    for number, amount in enumerate(plan["current_round"], start=1):
-        old_item = existing_items.get(number)
-        if old_item and old_item.get("status") != STATUS_PLANNED:
-            item = copy.deepcopy(old_item)
-        else:
-            item = _new_item(symbol, number, amount)
-        items.append(item)
+    number = 1
+    for round_amounts in plan["rounds"]:
+        for amount in round_amounts:
+            old_item = existing_items.get(number)
+            if old_item and old_item.get("status") != STATUS_PLANNED:
+                item = copy.deepcopy(old_item)
+            else:
+                item = _new_item(symbol, number, amount)
+            items.append(item)
+            number += 1
     return {
         **copy.deepcopy(TARGETS[symbol]),
         "reserved_amount": plan["reserved_amount"],
@@ -117,6 +145,7 @@ def default_purchase_plan() -> dict:
 
     assets["588000"] = {
         **copy.deepcopy(TARGETS["588000"]),
+        "plan_note": "暂停：半导体权重过高（50%+），与科技簇（集成电路/AI）同步暂停；待科技簇解冻后统一评估。",
         "items": [_new_item("588000", number, 2_552.5) for number in range(1, 7)],
     }
 
@@ -135,7 +164,7 @@ def default_purchase_plan() -> dict:
     return {
         "version": CURRENT_PLAN_VERSION,
         "base_amount": PLAN_BASE_AMOUNT,
-        "cash_target": 85_500.0,
+        "cash_target": 75_500.0,
         "allocation_scheme": {
             "strategic_satellite": copy.deepcopy(STRATEGIC_SATELLITE_ALLOCATION)
         },

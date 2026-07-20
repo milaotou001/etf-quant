@@ -15,7 +15,6 @@ class InstrumentRegistryTests(unittest.TestCase):
             "563360": (40, 35),
             "510300": (40, 35),
             "518880": (35, 30),
-            "588000": (30, 25),
         }
 
         self.assertEqual(CORE_SYMBOLS, tuple(expected))
@@ -28,9 +27,18 @@ class InstrumentRegistryTests(unittest.TestCase):
             self.assertEqual(spec.rsi_confirmation, 40)
             self.assertTrue(spec.requires_verified_amount)
 
+    def test_suspended_core_preserves_thresholds_but_not_campaign(self):
+        spec = get_instrument("588000")
+        self.assertFalse(spec.is_core)
+        self.assertFalse(spec.supports_campaign)
+        self.assertFalse(spec.supports_backtest)
+        self.assertEqual(spec.rsi_first_entry, 30)
+        self.assertEqual(spec.rsi_second_entry, 25)
+        self.assertEqual(spec.rsi_confirmation, 40)
+
     def test_experimental_symbols_cannot_borrow_core_strategy_rules(self):
         for spec in list_instruments(include_experimental=True):
-            if spec.is_core:
+            if spec.is_core or spec.symbol == "588000":
                 continue
             self.assertFalse(spec.supports_campaign)
             self.assertFalse(spec.supports_backtest)
@@ -38,18 +46,13 @@ class InstrumentRegistryTests(unittest.TestCase):
             self.assertIsNone(spec.rsi_second_entry)
 
     def test_personal_holdings_are_available_as_experimental_observations(self):
-        expected = {
-            "159995": "芯片 ETF",
-            "159819": "人工智能 ETF",
-        }
-        for symbol, name in expected.items():
-            spec = get_instrument(symbol)
-            self.assertEqual(spec.name, name)
-            self.assertEqual(spec.market, "CN")
-            self.assertFalse(spec.is_core)
-            self.assertFalse(spec.supports_campaign)
-            self.assertFalse(spec.supports_backtest)
-            self.assertIn(spec, list_instruments(include_experimental=True))
+        spec = get_instrument("159920")
+        self.assertEqual(spec.name, "恒生 ETF")
+        self.assertEqual(spec.market, "HK")
+        self.assertFalse(spec.is_core)
+        self.assertFalse(spec.supports_campaign)
+        self.assertFalse(spec.supports_backtest)
+        self.assertIn(spec, list_instruments(include_experimental=True))
 
     def test_focus_watchlist_symbols_are_labeled_without_strategy_rules(self):
         expected = {
@@ -66,9 +69,9 @@ class InstrumentRegistryTests(unittest.TestCase):
             self.assertFalse(spec.supports_campaign)
             self.assertFalse(spec.supports_backtest)
 
-        ai = get_instrument("159819")
-        self.assertFalse(ai.is_focus)
-        self.assertEqual(ai.display_tier, "观察")
+        dbo = get_instrument("DBO")
+        self.assertFalse(dbo.is_focus)
+        self.assertEqual(dbo.display_tier, "观察")
         self.assertEqual(get_instrument("510300").display_tier, "核心")
 
     def test_battery_is_available_as_an_alternate_without_strategy_rules(self):

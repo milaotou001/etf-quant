@@ -813,7 +813,7 @@ if page == "战略方向":
 
 trade_cache = {}
 if MOBILE_READ_ONLY:
-    mobile_trade_cache = load_mobile_trades(os.environ) or load_mobile_trades_from_snapshot()
+    mobile_trade_cache = load_mobile_trades_from_snapshot() or load_mobile_trades(os.environ)
 else:
     mobile_trade_cache = {}
 if not MOBILE_READ_ONLY:
@@ -859,10 +859,11 @@ elif MOBILE_READ_ONLY:
 
 if page == "半年买入计划":
     if MOBILE_READ_ONLY:
-        display_plan = load_mobile_plan(os.environ) if os.environ.get("PURCHASE_PLAN_B64") else None
-        if display_plan is None:
+        try:
+            display_plan = load_mobile_plan_from_snapshot()
+        except MobileViewConfigError:
             try:
-                display_plan = load_mobile_plan_from_snapshot()
+                display_plan = load_mobile_plan(os.environ)
             except MobileViewConfigError as exc:
                 st.error(f"手机计划快照不可用：{exc}")
                 st.stop()

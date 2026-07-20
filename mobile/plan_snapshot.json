@@ -1,0 +1,778 @@
+{
+  "version": 6,
+  "base_amount": 285000.0,
+  "cash_target": 85500.0,
+  "allocation_scheme": {
+    "strategic_satellite": {
+      "first": 0.2,
+      "second": 0.3,
+      "third": 0.5
+    }
+  },
+  "assets": {
+    "563360": {
+      "name": "A500",
+      "target": 42000.0,
+      "color": "#2f855a",
+      "soft_color": "#dcefe5",
+      "plan_note": "第三笔等待右侧确认",
+      "items": [
+        {
+          "id": "563360-01",
+          "number": 1,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-13",
+          "actual": {
+            "date": "2026-07-13",
+            "dates": [
+              "2026-07-13"
+            ],
+            "qty": 2800,
+            "price": 1.316,
+            "amount": 3684.8,
+            "fills": [
+              {
+                "date": "2026-07-13",
+                "qty": 2800,
+                "price": 1.316,
+                "amount": 3684.8,
+                "trade_key": "563360|2026-07-13|2800|1.316|27"
+              }
+            ],
+            "trade_key": "563360|2026-07-13|2800|1.316|27",
+            "trade_keys": [
+              "563360|2026-07-13|2800|1.316|27"
+            ]
+          },
+          "needs_confirmation": false
+        },
+        {
+          "id": "563360-02",
+          "number": 2,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-15",
+          "confirmed_dates": [
+            "2026-07-15",
+            "2026-07-16"
+          ],
+          "actual": {
+            "date": "2026-07-15",
+            "dates": [
+              "2026-07-15",
+              "2026-07-16"
+            ],
+            "qty": 2300,
+            "price": 1.3407826086956522,
+            "amount": 3083.8,
+            "fills": [
+              {
+                "date": "2026-07-15",
+                "qty": 1000,
+                "price": 1.347,
+                "amount": 1347.0,
+                "trade_key": "563360|2026-07-15|1000|1.347|28"
+              },
+              {
+                "date": "2026-07-16",
+                "qty": 1300,
+                "price": 1.336,
+                "amount": 1736.8000000000002,
+                "trade_key": "563360|2026-07-16|1300|1.336|29"
+              }
+            ],
+            "trade_key": "563360|2026-07-15|1000|1.347|28|563360|2026-07-16|1300|1.336|29",
+            "trade_keys": [
+              "563360|2026-07-15|1000|1.347|28",
+              "563360|2026-07-16|1300|1.336|29"
+            ]
+          },
+          "needs_confirmation": false
+        },
+        {
+          "id": "563360-03",
+          "number": 3,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-17",
+          "confirmed_dates": [
+            "2026-07-17"
+          ],
+          "actual": {
+            "date": "2026-07-17",
+            "dates": [
+              "2026-07-17"
+            ],
+            "qty": 2900,
+            "price": 1.277,
+            "amount": 3703.2999999999997,
+            "fills": [
+              {
+                "date": "2026-07-17",
+                "qty": 2900,
+                "price": 1.277,
+                "amount": 3703.2999999999997,
+                "trade_key": "563360|2026-07-17|2900|1.277|30"
+              }
+            ],
+            "trade_key": "563360|2026-07-17|2900|1.277|30",
+            "trade_keys": [
+              "563360|2026-07-17|2900|1.277|30"
+            ]
+          },
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "510300": {
+      "name": "沪深300",
+      "target": 42000.0,
+      "color": "#2563eb",
+      "soft_color": "#dbeafe",
+      "plan_note": "第三笔等待右侧确认",
+      "items": [
+        {
+          "id": "510300-01",
+          "number": 1,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-13",
+          "actual": {
+            "date": "2026-07-13",
+            "dates": [
+              "2026-07-13"
+            ],
+            "qty": 800,
+            "price": 4.732,
+            "amount": 3785.6000000000004,
+            "fills": [
+              {
+                "date": "2026-07-13",
+                "qty": 800,
+                "price": 4.732,
+                "amount": 3785.6000000000004,
+                "trade_key": "510300|2026-07-13|800|4.732|25"
+              }
+            ],
+            "trade_key": "510300|2026-07-13|800|4.732|25",
+            "trade_keys": [
+              "510300|2026-07-13|800|4.732|25"
+            ]
+          },
+          "needs_confirmation": false
+        },
+        {
+          "id": "510300-02",
+          "number": 2,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-15",
+          "actual": {
+            "date": "2026-07-15",
+            "dates": [
+              "2026-07-15"
+            ],
+            "qty": 700,
+            "price": 4.848,
+            "amount": 3393.6,
+            "fills": [
+              {
+                "date": "2026-07-15",
+                "qty": 700,
+                "price": 4.848,
+                "amount": 3393.6,
+                "trade_key": "510300|2026-07-15|700|4.848|26"
+              }
+            ],
+            "trade_key": "510300|2026-07-15|700|4.848|26",
+            "trade_keys": [
+              "510300|2026-07-15|700|4.848|26"
+            ]
+          },
+          "needs_confirmation": false
+        },
+        {
+          "id": "510300-03",
+          "number": 3,
+          "planned_amount": 3750.0,
+          "planned_date": null,
+          "status": "reconciled",
+          "confirmed_date": "2026-07-17",
+          "confirmed_dates": [
+            "2026-07-17"
+          ],
+          "actual": {
+            "date": "2026-07-17",
+            "dates": [
+              "2026-07-17"
+            ],
+            "qty": 800,
+            "price": 4.639,
+            "amount": 3711.2000000000003,
+            "fills": [
+              {
+                "date": "2026-07-17",
+                "qty": 800,
+                "price": 4.639,
+                "amount": 3711.2000000000003,
+                "trade_key": "510300|2026-07-17|800|4.639|27"
+              }
+            ],
+            "trade_key": "510300|2026-07-17|800|4.639|27",
+            "trade_keys": [
+              "510300|2026-07-17|800|4.639|27"
+            ]
+          },
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "518880": {
+      "name": "黄金",
+      "target": 57000.0,
+      "color": "#d69e2e",
+      "soft_color": "#f9edc7",
+      "items": [
+        {
+          "id": "518880-01",
+          "number": 1,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-07-10",
+          "status": "reconciled",
+          "confirmed_date": "2026-07-10",
+          "actual": {
+            "date": "2026-07-10",
+            "qty": 200,
+            "price": 8.55,
+            "amount": 1710.0000000000002,
+            "trade_key": "518880|2026-07-10|200|8.55|33"
+          },
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-02",
+          "number": 2,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-07-17",
+          "status": "reconciled",
+          "confirmed_date": "2026-07-17",
+          "actual": {
+            "date": "2026-07-17",
+            "dates": [
+              "2026-07-17"
+            ],
+            "qty": 300,
+            "price": 8.316,
+            "amount": 2494.8,
+            "fills": [
+              {
+                "date": "2026-07-17",
+                "qty": 300,
+                "price": 8.316,
+                "amount": 2494.8,
+                "trade_key": "518880|2026-07-17|300|8.316|34"
+              }
+            ],
+            "trade_key": "518880|2026-07-17|300|8.316|34",
+            "trade_keys": [
+              "518880|2026-07-17|300|8.316|34"
+            ]
+          },
+          "needs_confirmation": false,
+          "confirmed_dates": [
+            "2026-07-17"
+          ]
+        },
+        {
+          "id": "518880-03",
+          "number": 3,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-07-24",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-04",
+          "number": 4,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-07-31",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-05",
+          "number": 5,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-08-07",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-06",
+          "number": 6,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-08-14",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-07",
+          "number": 7,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-08-21",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-08",
+          "number": 8,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-08-28",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-09",
+          "number": 9,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-09-04",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-10",
+          "number": 10,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-09-11",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-11",
+          "number": 11,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-09-18",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "518880-12",
+          "number": 12,
+          "planned_amount": 2500.0,
+          "planned_date": "2026-09-25",
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "561380": {
+      "name": "电网设备",
+      "target": 10000.0,
+      "color": "#0891b2",
+      "soft_color": "#cffafe",
+      "reserved_amount": 10000.0,
+      "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等半年报验证利润来源",
+      "items": [
+        {
+          "id": "561380-01",
+          "number": 1,
+          "planned_amount": 1200.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "561380-02",
+          "number": 2,
+          "planned_amount": 1800.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "561380-03",
+          "number": 3,
+          "planned_amount": 3000.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "561380-04",
+          "number": 4,
+          "planned_amount": 800.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "561380-05",
+          "number": 5,
+          "planned_amount": 1200.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "561380-06",
+          "number": 6,
+          "planned_amount": 2000.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "516150": {
+      "name": "稀土",
+      "target": 8000.0,
+      "color": "#c2410c",
+      "soft_color": "#ffedd5",
+      "reserved_amount": 8000.0,
+      "plan_note": "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复",
+      "items": [
+        {
+          "id": "516150-01",
+          "number": 1,
+          "planned_amount": 1500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "516150-02",
+          "number": 2,
+          "planned_amount": 2500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "516150-03",
+          "number": 3,
+          "planned_amount": 4000.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "560860": {
+      "name": "工业有色",
+      "target": 6000.0,
+      "color": "#b45309",
+      "soft_color": "#fef3c7",
+      "reserved_amount": 6000.0,
+      "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等Q3铜价趋势确认",
+      "items": [
+        {
+          "id": "560860-01",
+          "number": 1,
+          "planned_amount": 720.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "560860-02",
+          "number": 2,
+          "planned_amount": 1080.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "560860-03",
+          "number": 3,
+          "planned_amount": 1800.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "560860-04",
+          "number": 4,
+          "planned_amount": 480.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "560860-05",
+          "number": 5,
+          "planned_amount": 720.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "560860-06",
+          "number": 6,
+          "planned_amount": 1200.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "159570": {
+      "name": "港股创新药",
+      "target": 8000.0,
+      "color": "#db2777",
+      "soft_color": "#fce7f3",
+      "reserved_amount": 8000.0,
+      "plan_note": "第1笔等初步止跌；第2笔等回踩确认；第3笔等右侧修复",
+      "items": [
+        {
+          "id": "159570-01",
+          "number": 1,
+          "planned_amount": 1500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "159570-02",
+          "number": 2,
+          "planned_amount": 2500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "159570-03",
+          "number": 3,
+          "planned_amount": 4000.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "513180": {
+      "name": "恒生科技",
+      "target": 8000.0,
+      "color": "#0d9488",
+      "soft_color": "#ccfbf1",
+      "reserved_amount": 8000.0,
+      "plan_note": "第1轮：等RSI 30-35/回踩/右侧 · 第2轮：留弹药应对港股闪崩",
+      "items": [
+        {
+          "id": "513180-01",
+          "number": 1,
+          "planned_amount": 1000.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "513180-02",
+          "number": 2,
+          "planned_amount": 1500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "513180-03",
+          "number": 3,
+          "planned_amount": 2500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "513180-04",
+          "number": 4,
+          "planned_amount": 600.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "513180-05",
+          "number": 5,
+          "planned_amount": 900.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "513180-06",
+          "number": 6,
+          "planned_amount": 1500.0,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "confirmed_dates": [],
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ]
+    },
+    "588000": {
+      "name": "科创50（暂停）",
+      "target": 28500.0,
+      "color": "#7c3aed",
+      "soft_color": "#ede9fe",
+      "items": [
+        {
+          "id": "588000-01",
+          "number": 1,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "588000-02",
+          "number": 2,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "588000-03",
+          "number": 3,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "588000-04",
+          "number": 4,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "588000-05",
+          "number": 5,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        },
+        {
+          "id": "588000-06",
+          "number": 6,
+          "planned_amount": 2552.5,
+          "planned_date": null,
+          "status": "planned",
+          "confirmed_date": null,
+          "actual": null,
+          "needs_confirmation": false
+        }
+      ],
+      "plan_note": "暂停：半导体权重过高（50%+），与科技簇（集成电路/AI）同步暂停；待科技簇解冻后统一评估。"
+    }
+  }
+}

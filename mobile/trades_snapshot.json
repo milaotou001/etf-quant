@@ -1,0 +1,995 @@
+{
+  "version": 1,
+  "symbols": {
+    "159819": [
+      {
+        "date": "2026-06-11",
+        "type": "buy",
+        "price": 1.85,
+        "qty": 700
+      }
+    ],
+    "159920": [
+      {
+        "date": "2025-02-12",
+        "type": "buy",
+        "price": 1.346,
+        "qty": 1900
+      },
+      {
+        "date": "2025-02-13",
+        "type": "buy",
+        "price": 1.381,
+        "qty": 1800
+      },
+      {
+        "date": "2025-02-14",
+        "type": "buy",
+        "price": 1.38,
+        "qty": 1800
+      },
+      {
+        "date": "2025-02-17",
+        "type": "buy",
+        "price": 1.398,
+        "qty": 3600
+      },
+      {
+        "date": "2025-04-07",
+        "type": "sell_loss",
+        "price": 1.298,
+        "qty": 4500
+      },
+      {
+        "date": "2025-06-26",
+        "type": "sell_profit",
+        "price": 1.492,
+        "qty": 2300
+      },
+      {
+        "date": "2025-07-21",
+        "type": "buy",
+        "price": 1.533,
+        "qty": 4000
+      },
+      {
+        "date": "2025-07-31",
+        "type": "sell_profit",
+        "price": 1.527,
+        "qty": 4700
+      },
+      {
+        "date": "2025-08-14",
+        "type": "buy",
+        "price": 1.579,
+        "qty": 2300
+      },
+      {
+        "date": "2025-08-27",
+        "type": "sell_profit",
+        "price": 1.559,
+        "qty": 2900
+      },
+      {
+        "date": "2025-09-05",
+        "type": "buy",
+        "price": 1.548,
+        "qty": 3300
+      },
+      {
+        "date": "2025-09-19",
+        "type": "buy",
+        "price": 1.635,
+        "qty": 1400
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 1.634,
+        "qty": 3200
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 1.634,
+        "qty": 4900
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_profit",
+        "price": 1.586,
+        "qty": 2700
+      },
+      {
+        "date": "2026-01-06",
+        "type": "buy",
+        "price": 1.613,
+        "qty": 5000
+      },
+      {
+        "date": "2026-03-10",
+        "type": "buy",
+        "price": 1.53,
+        "qty": 800
+      },
+      {
+        "date": "2026-03-10",
+        "type": "buy",
+        "price": 1.531,
+        "qty": 700
+      },
+      {
+        "date": "2026-03-10",
+        "type": "buy",
+        "price": 1.53,
+        "qty": 1400
+      },
+      {
+        "date": "2026-03-23",
+        "type": "buy",
+        "price": 1.471,
+        "qty": 14000
+      },
+      {
+        "date": "2026-03-23",
+        "type": "sell_loss",
+        "price": 1.466,
+        "qty": 19000
+      },
+      {
+        "date": "2026-06-08",
+        "type": "buy",
+        "price": 1.447,
+        "qty": 2000
+      },
+      {
+        "date": "2026-06-18",
+        "type": "sell_loss",
+        "price": 1.406,
+        "qty": 4000
+      },
+      {
+        "date": "2026-06-23",
+        "type": "sell_loss",
+        "price": 1.372,
+        "qty": 3000
+      },
+      {
+        "date": "2026-06-26",
+        "type": "sell_loss",
+        "price": 1.348,
+        "qty": 4500
+      },
+      {
+        "date": "2026-06-30",
+        "type": "sell_loss",
+        "price": 1.345,
+        "qty": 4500
+      }
+    ],
+    "159995": [
+      {
+        "date": "2026-06-01",
+        "type": "buy",
+        "price": 1.19,
+        "qty": 1800
+      },
+      {
+        "date": "2026-06-17",
+        "type": "buy",
+        "price": 1.2975,
+        "qty": 1200
+      },
+      {
+        "date": "2026-07-16",
+        "type": "buy",
+        "price": 1.317,
+        "qty": 800
+      },
+      {
+        "date": "2026-07-17",
+        "type": "sell_profit",
+        "price": 1.249,
+        "qty": 800
+      }
+    ],
+    "510300": [
+      {
+        "date": "2024-07-19",
+        "type": "buy",
+        "price": 3.586,
+        "qty": 300
+      },
+      {
+        "date": "2024-07-19",
+        "type": "buy",
+        "price": 3.585,
+        "qty": 100
+      },
+      {
+        "date": "2024-08-05",
+        "type": "buy",
+        "price": 3.452,
+        "qty": 300
+      },
+      {
+        "date": "2024-08-22",
+        "type": "sell_loss",
+        "price": 3.379,
+        "qty": 300
+      },
+      {
+        "date": "2024-11-07",
+        "type": "buy",
+        "price": 4.19,
+        "qty": 300
+      },
+      {
+        "date": "2024-11-08",
+        "type": "buy",
+        "price": 4.25,
+        "qty": 400
+      },
+      {
+        "date": "2025-02-12",
+        "type": "buy",
+        "price": 3.974,
+        "qty": 600
+      },
+      {
+        "date": "2025-02-13",
+        "type": "buy",
+        "price": 4.022,
+        "qty": 600
+      },
+      {
+        "date": "2025-02-14",
+        "type": "buy",
+        "price": 4.03,
+        "qty": 600
+      },
+      {
+        "date": "2025-02-18",
+        "type": "buy",
+        "price": 4.051,
+        "qty": 1200
+      },
+      {
+        "date": "2025-06-26",
+        "type": "sell_profit",
+        "price": 3.994,
+        "qty": 2000
+      },
+      {
+        "date": "2025-09-05",
+        "type": "buy",
+        "price": 4.483,
+        "qty": 1100
+      },
+      {
+        "date": "2025-09-19",
+        "type": "buy",
+        "price": 4.605,
+        "qty": 600
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 4.653,
+        "qty": 2200
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 4.652,
+        "qty": 1100
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_profit",
+        "price": 4.648,
+        "qty": 1100
+      },
+      {
+        "date": "2025-10-29",
+        "type": "buy",
+        "price": 4.81,
+        "qty": 900
+      },
+      {
+        "date": "2025-10-31",
+        "type": "buy",
+        "price": 4.804,
+        "qty": 400
+      },
+      {
+        "date": "2025-11-21",
+        "type": "buy",
+        "price": 4.614,
+        "qty": 1200
+      },
+      {
+        "date": "2025-12-26",
+        "type": "sell_profit",
+        "price": 4.761,
+        "qty": 4200
+      },
+      {
+        "date": "2026-03-10",
+        "type": "buy",
+        "price": 4.673,
+        "qty": 300
+      },
+      {
+        "date": "2026-06-08",
+        "type": "buy",
+        "price": 4.766,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-23",
+        "type": "buy",
+        "price": 4.933,
+        "qty": 400
+      },
+      {
+        "date": "2026-06-25",
+        "type": "buy",
+        "price": 5.004,
+        "qty": 400
+      },
+      {
+        "date": "2026-06-26",
+        "type": "buy",
+        "price": 4.929,
+        "qty": 400
+      },
+      {
+        "date": "2026-07-13",
+        "type": "buy",
+        "price": 4.732,
+        "qty": 800
+      },
+      {
+        "date": "2026-07-15",
+        "type": "buy",
+        "price": 4.848,
+        "qty": 700
+      },
+      {
+        "date": "2026-07-17",
+        "type": "buy",
+        "price": 4.639,
+        "qty": 800
+      }
+    ],
+    "513180": [
+      {
+        "date": "2025-02-12",
+        "type": "buy",
+        "price": 0.723,
+        "qty": 3400
+      },
+      {
+        "date": "2025-02-13",
+        "type": "buy",
+        "price": 0.75,
+        "qty": 3200
+      },
+      {
+        "date": "2025-02-14",
+        "type": "buy",
+        "price": 0.741,
+        "qty": 3300
+      },
+      {
+        "date": "2025-02-17",
+        "type": "buy",
+        "price": 0.766,
+        "qty": 3400
+      },
+      {
+        "date": "2025-04-07",
+        "type": "sell_loss",
+        "price": 0.664,
+        "qty": 13300
+      },
+      {
+        "date": "2025-05-07",
+        "type": "buy",
+        "price": 0.739,
+        "qty": 8600
+      },
+      {
+        "date": "2025-05-07",
+        "type": "buy",
+        "price": 0.739,
+        "qty": 6500
+      },
+      {
+        "date": "2025-05-07",
+        "type": "sell_loss",
+        "price": 0.735,
+        "qty": 7500
+      },
+      {
+        "date": "2025-06-26",
+        "type": "buy",
+        "price": 0.72,
+        "qty": 22100
+      },
+      {
+        "date": "2025-07-25",
+        "type": "sell_profit",
+        "price": 0.765,
+        "qty": 22200
+      },
+      {
+        "date": "2025-08-14",
+        "type": "buy",
+        "price": 0.762,
+        "qty": 3500
+      },
+      {
+        "date": "2025-08-20",
+        "type": "sell_profit",
+        "price": 0.749,
+        "qty": 8200
+      },
+      {
+        "date": "2025-09-05",
+        "type": "buy",
+        "price": 0.759,
+        "qty": 4100
+      },
+      {
+        "date": "2025-09-23",
+        "type": "sell_profit",
+        "price": 0.829,
+        "qty": 5100
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 0.852,
+        "qty": 11700
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_loss",
+        "price": 0.811,
+        "qty": 6700
+      },
+      {
+        "date": "2025-11-21",
+        "type": "buy",
+        "price": 0.737,
+        "qty": 3900
+      },
+      {
+        "date": "2026-01-06",
+        "type": "buy",
+        "price": 0.771,
+        "qty": 16600
+      },
+      {
+        "date": "2026-01-13",
+        "type": "buy",
+        "price": 0.78,
+        "qty": 14300
+      },
+      {
+        "date": "2026-01-20",
+        "type": "buy",
+        "price": 0.752,
+        "qty": 4000
+      },
+      {
+        "date": "2026-02-02",
+        "type": "buy",
+        "price": 0.74,
+        "qty": 15000
+      },
+      {
+        "date": "2026-02-27",
+        "type": "sell_loss",
+        "price": 0.668,
+        "qty": 20200
+      },
+      {
+        "date": "2026-03-02",
+        "type": "sell_loss",
+        "price": 0.65,
+        "qty": 20200
+      },
+      {
+        "date": "2026-03-19",
+        "type": "sell_loss",
+        "price": 0.649,
+        "qty": 10100
+      },
+      {
+        "date": "2026-03-23",
+        "type": "sell_loss",
+        "price": 0.613,
+        "qty": 10100
+      }
+    ],
+    "518880": [
+      {
+        "date": "2024-08-05",
+        "type": "buy",
+        "price": 5.4,
+        "qty": 400
+      },
+      {
+        "date": "2025-02-12",
+        "type": "buy",
+        "price": 6.534,
+        "qty": 400
+      },
+      {
+        "date": "2025-04-07",
+        "type": "buy",
+        "price": 6.961,
+        "qty": 900
+      },
+      {
+        "date": "2025-04-07",
+        "type": "buy",
+        "price": 6.92,
+        "qty": 900
+      },
+      {
+        "date": "2025-04-07",
+        "type": "buy",
+        "price": 6.876,
+        "qty": 900
+      },
+      {
+        "date": "2025-04-24",
+        "type": "sell_profit",
+        "price": 7.688,
+        "qty": 1100
+      },
+      {
+        "date": "2025-04-24",
+        "type": "sell_profit",
+        "price": 7.65,
+        "qty": 800
+      },
+      {
+        "date": "2025-08-14",
+        "type": "buy",
+        "price": 7.431,
+        "qty": 2100
+      },
+      {
+        "date": "2025-09-17",
+        "type": "sell_profit",
+        "price": 7.988,
+        "qty": 2800
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 8.144,
+        "qty": 1500
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 8.141,
+        "qty": 1600
+      },
+      {
+        "date": "2025-10-09",
+        "type": "buy",
+        "price": 8.724,
+        "qty": 1200
+      },
+      {
+        "date": "2025-10-20",
+        "type": "sell_profit",
+        "price": 9.328,
+        "qty": 1700
+      },
+      {
+        "date": "2025-11-03",
+        "type": "buy",
+        "price": 8.758,
+        "qty": 1200
+      },
+      {
+        "date": "2026-02-27",
+        "type": "buy",
+        "price": 10.921,
+        "qty": 500
+      },
+      {
+        "date": "2026-02-27",
+        "type": "buy",
+        "price": 10.921,
+        "qty": 500
+      },
+      {
+        "date": "2026-03-19",
+        "type": "buy",
+        "price": 10.335,
+        "qty": 1900
+      },
+      {
+        "date": "2026-03-19",
+        "type": "sell_profit",
+        "price": 10.283,
+        "qty": 1900
+      },
+      {
+        "date": "2026-03-20",
+        "type": "buy",
+        "price": 9.96,
+        "qty": 1100
+      },
+      {
+        "date": "2026-03-20",
+        "type": "buy",
+        "price": 9.9,
+        "qty": 1000
+      },
+      {
+        "date": "2026-03-23",
+        "type": "sell_profit",
+        "price": 8.945,
+        "qty": 2400
+      },
+      {
+        "date": "2026-03-23",
+        "type": "buy",
+        "price": 8.906,
+        "qty": 2400
+      },
+      {
+        "date": "2026-03-23",
+        "type": "sell_loss",
+        "price": 9.481,
+        "qty": 1100
+      },
+      {
+        "date": "2026-03-23",
+        "type": "buy",
+        "price": 9.461,
+        "qty": 1100
+      },
+      {
+        "date": "2026-03-23",
+        "type": "buy",
+        "price": 9.453,
+        "qty": 1100
+      },
+      {
+        "date": "2026-04-15",
+        "type": "sell_loss",
+        "price": 10.14,
+        "qty": 2900
+      },
+      {
+        "date": "2026-04-23",
+        "type": "buy",
+        "price": 9.892,
+        "qty": 1700
+      },
+      {
+        "date": "2026-04-23",
+        "type": "buy",
+        "price": 9.892,
+        "qty": 1200
+      },
+      {
+        "date": "2026-04-30",
+        "type": "buy",
+        "price": 9.611,
+        "qty": 2700
+      },
+      {
+        "date": "2026-06-17",
+        "type": "sell_loss",
+        "price": 8.963,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-17",
+        "type": "sell_loss",
+        "price": 8.962,
+        "qty": 500
+      },
+      {
+        "date": "2026-06-18",
+        "type": "sell_profit",
+        "price": 8.949,
+        "qty": 2000
+      },
+      {
+        "date": "2026-06-25",
+        "type": "buy",
+        "price": 8.307,
+        "qty": 400
+      },
+      {
+        "date": "2026-07-10",
+        "type": "buy",
+        "price": 8.55,
+        "qty": 200
+      },
+      {
+        "date": "2026-07-17",
+        "type": "buy",
+        "price": 8.316,
+        "qty": 300
+      }
+    ],
+    "561380": [
+      {
+        "date": "2026-07-17",
+        "type": "buy",
+        "price": 0.705,
+        "qty": 3000
+      }
+    ],
+    "563360": [
+      {
+        "date": "2025-02-12",
+        "type": "buy",
+        "price": 1.009,
+        "qty": 2400
+      },
+      {
+        "date": "2025-02-13",
+        "type": "buy",
+        "price": 1.021,
+        "qty": 2500
+      },
+      {
+        "date": "2025-02-14",
+        "type": "buy",
+        "price": 1.024,
+        "qty": 2400
+      },
+      {
+        "date": "2025-02-17",
+        "type": "buy",
+        "price": 1.029,
+        "qty": 4900
+      },
+      {
+        "date": "2025-02-18",
+        "type": "buy",
+        "price": 1.028,
+        "qty": 2400
+      },
+      {
+        "date": "2025-04-07",
+        "type": "buy",
+        "price": 0.931,
+        "qty": 3300
+      },
+      {
+        "date": "2025-04-07",
+        "type": "buy",
+        "price": 0.935,
+        "qty": 3300
+      },
+      {
+        "date": "2025-06-26",
+        "type": "sell_profit",
+        "price": 1.023,
+        "qty": 10600
+      },
+      {
+        "date": "2025-07-31",
+        "type": "sell_profit",
+        "price": 1.078,
+        "qty": 7900
+      },
+      {
+        "date": "2025-08-14",
+        "type": "buy",
+        "price": 1.109,
+        "qty": 3700
+      },
+      {
+        "date": "2025-08-27",
+        "type": "sell_profit",
+        "price": 1.164,
+        "qty": 2000
+      },
+      {
+        "date": "2025-09-05",
+        "type": "buy",
+        "price": 1.163,
+        "qty": 4300
+      },
+      {
+        "date": "2025-09-19",
+        "type": "buy",
+        "price": 1.214,
+        "qty": 1800
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 1.229,
+        "qty": 8800
+      },
+      {
+        "date": "2025-09-24",
+        "type": "buy",
+        "price": 1.228,
+        "qty": 4200
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_profit",
+        "price": 1.212,
+        "qty": 4700
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_profit",
+        "price": 1.216,
+        "qty": 4700
+      },
+      {
+        "date": "2025-10-15",
+        "type": "sell_loss",
+        "price": 1.217,
+        "qty": 4700
+      },
+      {
+        "date": "2025-10-29",
+        "type": "buy",
+        "price": 1.255,
+        "qty": 3100
+      },
+      {
+        "date": "2025-11-21",
+        "type": "buy",
+        "price": 1.201,
+        "qty": 4700
+      },
+      {
+        "date": "2026-03-10",
+        "type": "buy",
+        "price": 1.312,
+        "qty": 800
+      },
+      {
+        "date": "2026-05-25",
+        "type": "buy",
+        "price": 1.37,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-08",
+        "type": "buy",
+        "price": 1.32,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-23",
+        "type": "buy",
+        "price": 1.384,
+        "qty": 3000
+      },
+      {
+        "date": "2026-06-25",
+        "type": "buy",
+        "price": 1.411,
+        "qty": 2000
+      },
+      {
+        "date": "2026-06-26",
+        "type": "buy",
+        "price": 1.389,
+        "qty": 1400
+      },
+      {
+        "date": "2026-07-03",
+        "type": "buy",
+        "price": 1.374,
+        "qty": 1400
+      },
+      {
+        "date": "2026-07-13",
+        "type": "buy",
+        "price": 1.316,
+        "qty": 2800
+      },
+      {
+        "date": "2026-07-15",
+        "type": "buy",
+        "price": 1.347,
+        "qty": 1000
+      },
+      {
+        "date": "2026-07-16",
+        "type": "buy",
+        "price": 1.336,
+        "qty": 1300
+      },
+      {
+        "date": "2026-07-17",
+        "type": "buy",
+        "price": 1.277,
+        "qty": 2900
+      }
+    ],
+    "588000": [
+      {
+        "date": "2026-05-15",
+        "type": "buy",
+        "price": 1.799,
+        "qty": 4500
+      },
+      {
+        "date": "2026-05-25",
+        "type": "sell_profit",
+        "price": 2.0,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-01",
+        "type": "buy",
+        "price": 1.8,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-08",
+        "type": "buy",
+        "price": 1.696,
+        "qty": 1000
+      },
+      {
+        "date": "2026-06-16",
+        "type": "sell_profit",
+        "price": 1.831,
+        "qty": 1300
+      },
+      {
+        "date": "2026-06-17",
+        "type": "buy",
+        "price": 1.877,
+        "qty": 1600
+      },
+      {
+        "date": "2026-06-18",
+        "type": "sell_profit",
+        "price": 1.953,
+        "qty": 500
+      },
+      {
+        "date": "2026-06-25",
+        "type": "buy",
+        "price": 2.161,
+        "qty": 1000
+      },
+      {
+        "date": "2026-07-13",
+        "type": "sell_profit",
+        "price": 2.1,
+        "qty": 900
+      },
+      {
+        "date": "2026-07-16",
+        "type": "buy",
+        "price": 1.944,
+        "qty": 1300
+      },
+      {
+        "date": "2026-07-17",
+        "type": "sell_profit",
+        "price": 1.851,
+        "qty": 1300
+      }
+    ]
+  }
+}

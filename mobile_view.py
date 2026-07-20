@@ -5,8 +5,10 @@ import base64
 import binascii
 import json
 import math
+import os
 from datetime import datetime
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 
 from purchase_plan import CURRENT_PLAN_VERSION
 
@@ -21,6 +23,10 @@ FULL_PAGE_OPTIONS = [
 READ_ONLY_PAGE_OPTIONS = ["状态与图表", "半年买入计划"]
 TRADE_SNAPSHOT_VERSION = 1
 TRADE_TYPES = {"buy", "sell_profit", "sell_loss"}
+
+MOBILE_DIR = Path(__file__).resolve().parent / "mobile"
+PLAN_SNAPSHOT_FILE = "plan_snapshot.json"
+TRADES_SNAPSHOT_FILE = "trades_snapshot.json"
 
 
 class MobileViewConfigError(ValueError):
@@ -149,4 +155,42 @@ def load_mobile_trades(env: Mapping[str, object]) -> dict[str, list[dict]]:
         normalized = _normalize_trade_snapshot(decoded.get("symbols", {}))
         return normalized["symbols"]
     except (UnicodeEncodeError, UnicodeDecodeError, binascii.Error, json.JSONDecodeError, TypeError, ValueError, MobileViewConfigError):
+        return {}
+
+
+def save_mobile_snapshots(plan: dict, trades: dict | None = None, base_dir: Path | None = None) -> tuple[Path, Path]:
+    """Write plan and trade snapshots as plain JSON files.  Returns (plan_path, trades_path)."""
+    target_dir = base_dir or MOBILE_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+    plan_path = target_dir / PLAN_SNAPSHOT_FILE
+    trades_path = target_dir / TRADES_SNAPSHOT_FILE
+    plan_payload = _validate_plan(plan)
+    plan_path.write_text(json.dumps(plan_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    snapshot = _normalize_trade_snapshot(trades or {}) if trades else {"version": TRADE_SNAPSHOT_VERSION, "symbols": {}}
+    trades_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+    return plan_path, trades_path
+
+
+def load_mobile_plan_from_snapshot(base_dir: Path | None = None) -> dict:
+    plan_path = (base_dir or MOBILE_DIR) / PLAN_SNAPSHOT_FILE
+    if not plan_path.is_file():
+        raise MobileViewConfigError(f"计划快照文件不存在：{plan_path}")
+    try:
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise MobileViewConfigError("计划快照文件解析失败") from exc
+    return _validate_plan(plan)
+
+
+def load_mobile_trades_from_snapshot(base_dir: Path | None = None) -> dict[str, list[dict]]:
+    trades_path = (base_dir or MOBILE_DIR) / TRADES_SNAPSHOT_FILE
+    if not trades_path.is_file():
+        return {}
+    try:
+        decoded = json.loads(trades_path.read_text(encoding="utf-8"))
+        if not isinstance(decoded, Mapping) or decoded.get("version") != TRADE_SNAPSHOT_VERSION:
+            return {}
+        normalized = _normalize_trade_snapshot(decoded.get("symbols", {}))
+        return normalized["symbols"]
+    except (json.JSONDecodeError, TypeError, ValueError, MobileViewConfigError):
         return {}

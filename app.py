@@ -23,7 +23,9 @@ from mobile_view import (
     MobileViewConfigError,
     is_mobile_read_only,
     load_mobile_plan,
+    load_mobile_plan_from_snapshot,
     load_mobile_trades,
+    load_mobile_trades_from_snapshot,
     mobile_page_options,
     plan_price_symbols,
     primary_metric_order,
@@ -810,7 +812,10 @@ if page == "战略方向":
     st.stop()
 
 trade_cache = {}
-mobile_trade_cache = load_mobile_trades(os.environ) if MOBILE_READ_ONLY else {}
+if MOBILE_READ_ONLY:
+    mobile_trade_cache = load_mobile_trades(os.environ) or load_mobile_trades_from_snapshot()
+else:
+    mobile_trade_cache = {}
 if not MOBILE_READ_ONLY:
     trade_cache = load_trade_cache()
     if uploaded_statement is not None:
@@ -854,11 +859,13 @@ elif MOBILE_READ_ONLY:
 
 if page == "半年买入计划":
     if MOBILE_READ_ONLY:
-        try:
-            display_plan = load_mobile_plan(os.environ)
-        except MobileViewConfigError as exc:
-            st.error(f"手机计划快照不可用：{exc}")
-            st.stop()
+        display_plan = load_mobile_plan(os.environ) if os.environ.get("PURCHASE_PLAN_B64") else None
+        if display_plan is None:
+            try:
+                display_plan = load_mobile_plan_from_snapshot()
+            except MobileViewConfigError as exc:
+                st.error(f"手机计划快照不可用：{exc}")
+                st.stop()
         display_trade_cache = {}
         account_snapshot = {}
     else:

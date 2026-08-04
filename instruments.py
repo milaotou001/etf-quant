@@ -15,6 +15,8 @@ class InstrumentSpec:
     requires_verified_amount: bool = False
     is_focus: bool = False
     is_alternate: bool = False
+    tracked_index: str | None = None
+    index_name: str | None = None
 
     @property
     def display_tier(self) -> str:
@@ -34,13 +36,19 @@ class InstrumentSpec:
     def supports_backtest(self) -> bool:
         return self.is_core and self.rsi_second_entry is not None
 
+    @property
+    def has_tracked_index(self) -> bool:
+        return self.tracked_index is not None
+
 
 CORE_SYMBOLS = ("563360", "510300", "518880")
 
 _INSTRUMENTS = (
     # === 核心持仓（已持有） ===
-    InstrumentSpec("563360", "A500 ETF", "CN", "宽基", True, 40, 35, 40, True),
-    InstrumentSpec("510300", "沪深300 ETF", "CN", "宽基", True, 40, 35, 40, True),
+    InstrumentSpec("563360", "A500 ETF", "CN", "宽基", True, 40, 35, 40, True,
+                   tracked_index="000510", index_name="中证A500"),
+    InstrumentSpec("510300", "沪深300 ETF", "CN", "宽基", True, 40, 35, 40, True,
+                   tracked_index="000300", index_name="沪深300"),
     InstrumentSpec("518880", "黄金 ETF", "CN", "黄金", True, 35, 30, 40, True),
     # === 产业卫星（按H1证据强度排序） ===
     InstrumentSpec("159570", "港股创新药 ETF", "CN", "产业卫星", False, is_focus=True),
@@ -50,7 +58,8 @@ _INSTRUMENTS = (
     # === 离岸成长 ===
     InstrumentSpec("513180", "恒生科技 ETF", "HK", "离岸成长", False),
     # === 暂停 ===
-    InstrumentSpec("588000", "科创50 ETF", "CN", "暂停", False, 30, 25, 40, False),
+    InstrumentSpec("588000", "科创50 ETF", "CN", "暂停", False, 30, 25, 40, False,
+                   tracked_index="000688", index_name="科创50"),
     # === 防守配置（等半年报+RSI低位） ===
     InstrumentSpec("159549", "红利低波100 ETF", "CN", "防守配置", False),
     # === 候补 ===
@@ -75,3 +84,11 @@ def list_instruments(include_experimental: bool = True) -> tuple[InstrumentSpec,
     if include_experimental:
         return _INSTRUMENTS
     return tuple(spec for spec in _INSTRUMENTS if spec.is_core)
+
+
+def resolve_instrument(symbol: str) -> InstrumentSpec:
+    """Return the known spec or a generic fallback for arbitrary codes."""
+    spec = _BY_SYMBOL.get(symbol)
+    if spec is not None:
+        return spec
+    return InstrumentSpec(symbol, f"{symbol} · 自定义观察", "CN", "自定义", False)

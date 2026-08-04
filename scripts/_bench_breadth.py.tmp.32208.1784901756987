@@ -1,0 +1,20 @@
+import sys; sys.path.insert(0, '.')
+import time, os
+
+# Force fresh start
+import shutil
+shutil.rmtree('cache/breadth', ignore_errors=True)
+
+from breadth import load_breadth
+
+t0 = time.time()
+bd = load_breadth('510300', force_refresh=True)
+elapsed = time.time() - t0
+print(f'Elapsed: {elapsed:.1f}s')
+if bd:
+    if 'error' in bd:
+        print(f"Error: {bd['error']}, breadth={bd['breadth']}")
+    else:
+        print(f"MA8: {bd['ma8_display']}, MA21: {bd['ma21_display']}, state: {bd['state']}, trend: {bd['trend']}")
+        print(f"Stocks: {bd['valid_stocks']}/{bd['total_stocks']}, history: {bd.get('history_days', 0)} days")
+        print(f"Explanation: {bd['explanation']}")

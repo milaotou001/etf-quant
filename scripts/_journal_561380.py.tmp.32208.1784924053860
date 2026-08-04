@@ -1,0 +1,18 @@
+"""为 561380 写入今日日志"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from data import load_data
+from journal import create_entry
+
+df = load_data("561380", force_refresh=False)
+analysis = (
+    "不到一个月从 0.902 跌至 0.691，跌幅约 23%。"
+    "当前空头排列完整，价格在所有主要均线下方，MA60 已拐头向下。"
+    "RSI 34.99 接近超卖，MACD 绿柱收窄中，下跌动能边际减弱但未到反转信号。"
+    "MA150 仍在上升，长期趋势尚未彻底走坏，本轮暂定性为牛市深度回调。"
+)
+prediction = "短期有技术性反弹可能（RSI 近 34 + MACD 绿柱收窄），但反弹高度受 MA20 压制。中期需等待 MA60 走平或反弹站上 MA20 才能确认企稳。"
+plan = "观望，不抄底。等待两个右侧信号之一：RSI 回到 30 以下再反弹、或价格重新站上 MA20。在此之前不操作。"
+
+path = create_entry("561380", df, analysis, prediction, plan)
+print(f"日志已写入: {path}")

@@ -72,6 +72,11 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn("mobile_trade_cache.get(symbol) if MOBILE_READ_ONLY and show_trades", self.source)
         self.assertIn("个人交易点已关闭", self.source)
 
+    def test_custom_symbol_search_requires_explicit_submission(self):
+        self.assertIn('st.form("symbol-search")', self.source)
+        self.assertIn('st.form_submit_button("查看图表")', self.source)
+        self.assertIn("classify_cn_security(candidate)", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

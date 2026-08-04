@@ -1,0 +1,83 @@
+<style>
+  .layout-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin-top:20px; }
+  .layout-card { border:1px solid #dfe6e2; border-radius:14px; background:#fff; overflow:hidden; cursor:pointer; transition:.18s ease; }
+  .layout-card:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(25,65,55,.10); }
+  .layout-card.selected { outline:3px solid #1b6b5c; }
+  .preview { background:#f7faf8; padding:14px; min-height:430px; color:#24342f; font-size:11px; }
+  .mini-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-weight:700; }
+  .pill { padding:3px 7px; border-radius:999px; background:#e1f0e9; color:#1b6b5c; font-size:9px; }
+  .summary { padding:11px; border-radius:10px; background:#1b6b5c; color:#fff; margin-bottom:10px; }
+  .summary strong { display:block; font-size:15px; margin-bottom:3px; }
+  .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
+  .metric { background:#fff; border:1px solid #e2e8e5; border-radius:8px; padding:7px; }
+  .metric b { display:block; font-size:13px; }
+  .rank { background:#fff; border:1px solid #e2e8e5; border-radius:9px; padding:9px; margin-bottom:7px; }
+  .rank-head { display:flex; justify-content:space-between; font-weight:700; }
+  .bar { height:5px; border-radius:8px; background:#e9efec; margin:6px 0; overflow:hidden; }
+  .bar i { display:block; height:100%; background:#1b6b5c; }
+  .muted { color:#6b7d76; }
+  .queue { display:flex; gap:7px; padding:8px; margin-bottom:7px; background:#fff; border:1px solid #e2e8e5; border-radius:8px; }
+  .queue .dot { width:8px; height:8px; margin-top:3px; border-radius:50%; background:#e5a43b; flex:0 0 auto; }
+  .table-row { display:grid; grid-template-columns:1.1fr .8fr .8fr; gap:4px; padding:7px 5px; border-bottom:1px solid #edf1ef; background:#fff; }
+  .flow-step { padding:10px; border-left:4px solid #1b6b5c; background:#fff; margin-bottom:7px; border-radius:7px; }
+  .card-body { padding:14px; }
+  .card-body h3 { margin:0 0 6px; font-size:16px; }
+  .card-body p { margin:0; font-size:13px; color:#65736e; line-height:1.45; }
+  .recommended { color:#1b6b5c; font-weight:700; }
+  @media(max-width:900px){ .layout-grid{grid-template-columns:1fr;} }
+</style>
+
+<h2>“战略方向”第六页，哪种信息顺序最适合日常使用？</h2>
+<p class="subtitle">三种方案都遵守：只有经过 Codex 与达达双确认的证据，才进入方向结论。</p>
+
+<div class="layout-grid">
+  <div class="layout-card option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="preview">
+      <div class="mini-nav"><span>战略方向</span><span class="pill">证据更新至 2026-07</span></div>
+      <div class="summary"><strong>科技产业资金趋势仍在增强</strong>先看方向结论，再决定要不要展开研究；这里不显示买入信号。</div>
+      <div class="metrics">
+        <div class="metric"><span class="muted">正式证据</span><b>28 条</b></div>
+        <div class="metric"><span class="muted">待你确认</span><b>7 条</b></div>
+        <div class="metric"><span class="muted">重点方向</span><b>3 个</b></div>
+      </div>
+      <div class="rank"><div class="rank-head"><span>1 · 半导体</span><span>资金落地</span></div><div class="bar"><i style="width:82%"></i></div><div class="muted">产业基金 · 扩产项目 · 设备材料</div></div>
+      <div class="rank"><div class="rank-head"><span>2 · 人工智能</span><span>项目落地</span></div><div class="bar"><i style="width:74%"></i></div><div class="muted">算力建设 · 场景采购 · 模型应用</div></div>
+      <div class="rank"><div class="rank-head"><span>3 · 机器人</span><span>政策提出</span></div><div class="bar"><i style="width:56%"></i></div><div class="muted">仍缺资金与订单层确认</div></div>
+      <div class="queue"><span class="dot"></span><div><b>审核入口</b><br><span class="muted">7 条候选证据等待双确认</span></div></div>
+    </div>
+    <div class="card-body"><h3>A · 结论优先 + 证据抽屉 <span class="recommended">推荐</span></h3><p>日常先看方向排行和变化，点开产业后看证据；待审核材料集中在一个入口。</p></div>
+  </div>
+
+  <div class="layout-card option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="preview">
+      <div class="mini-nav"><span>战略证据审核台</span><span class="pill">7 条待确认</span></div>
+      <div class="summary"><strong>先审核，再生成结论</strong>每次进入页面都优先处理新增证据。</div>
+      <div class="queue"><span class="dot"></span><div><b>上海 · 半导体</b><br><span class="muted">“支持集成电路装备、材料……” · 工作报告 P12</span></div></div>
+      <div class="queue"><span class="dot"></span><div><b>深圳 · 人工智能</b><br><span class="muted">“建设人工智能先锋城市……” · 十五五 P31</span></div></div>
+      <div class="queue"><span class="dot"></span><div><b>武汉 · 存储芯片</b><br><span class="muted">长江存储三期 · 重大项目</span></div></div>
+      <div class="metrics">
+        <div class="metric"><span class="muted">半导体</span><b>增强</b></div>
+        <div class="metric"><span class="muted">人工智能</span><b>增强</b></div>
+        <div class="metric"><span class="muted">机器人</span><b>观察</b></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B · 审核台优先</h3><p>证据控制最强，但平时打开就看到大量文字，方向结论反而退到第二层。</p></div>
+  </div>
+
+  <div class="layout-card option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="preview">
+      <div class="mini-nav"><span>政府资金全景表</span><span class="pill">34 个产业</span></div>
+      <div class="table-row" style="font-weight:700;background:#e8f1ed"><span>产业</span><span>阶段</span><span>ETF</span></div>
+      <div class="table-row"><span>半导体</span><span>资金落地</span><span>159995</span></div>
+      <div class="table-row"><span>人工智能</span><span>项目落地</span><span>159819</span></div>
+      <div class="table-row"><span>机器人</span><span>政策提出</span><span>—</span></div>
+      <div class="table-row"><span>低空经济</span><span>项目落地</span><span>相关ETF</span></div>
+      <div class="table-row"><span>创新药</span><span>资金承诺</span><span>精准ETF</span></div>
+      <div class="table-row"><span>新能源</span><span>产业兑现</span><span>行业ETF</span></div>
+      <div class="table-row"><span>数据要素</span><span>政策提出</span><span>代理ETF</span></div>
+      <div class="table-row"><span>商业航天</span><span>项目落地</span><span>代理ETF</span></div>
+      <div class="flow-step"><b>筛选：</b>地区 · 阶段 · 产业 · 确认状态</div>
+    </div>
+    <div class="card-body"><h3>C · 完整产业大表</h3><p>核对效率最高，但信息密度大，更像研究后台，不适合作为平时的第一眼页面。</p></div>
+  </div>
+</div>

@@ -9,6 +9,7 @@ from datetime import datetime
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 plt.rcParams["axes.unicode_minus"] = False
+plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Noto Sans SC"]
 
 
 def resolve_chart_start(index, range_label: str):

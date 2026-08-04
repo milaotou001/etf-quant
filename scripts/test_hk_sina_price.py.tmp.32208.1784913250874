@@ -1,0 +1,27 @@
+"""Test Sina HK price batch API."""
+import requests
+
+# Test with a few HK stocks
+test_codes = ['00700', '09988', '03690', '01810', '09618', '09999', '01024', '00981']
+url = 'http://hq.sinajs.cn/list=' + ','.join(f'hk{c}' for c in test_codes)
+r = requests.get(url, headers={'Referer': 'https://finance.sina.com.cn'}, timeout=15)
+print(f'Status: {r.status_code}\n')
+for line in r.text.splitlines():
+    line = line.strip()
+    if not line.startswith('var hq_str_'):
+        continue
+    prefix_end = line.find('="')
+    raw_code = line[11:prefix_end]
+    code = raw_code[2:]  # strip hk prefix
+    data = line[prefix_end+2:-1]  # strip quotes
+    fields = data.split(',')
+    print(f'{code}:')
+    print(f'  [0] Name EN: {fields[0]}')
+    print(f'  [1] Name CN: {fields[1]}')
+    print(f'  [2] Open: {fields[2]}')
+    print(f'  [3] Prev close: {fields[3]}')
+    print(f'  [4] Last price: {fields[4]}')
+    print(f'  [5] High: {fields[5]}')
+    print(f'  [6] Low: {fields[6]}')
+    print(f'  Total fields: {len(fields)}')
+    print()

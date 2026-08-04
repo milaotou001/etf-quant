@@ -1,0 +1,35 @@
+"""检查 561380 K线断裂原因"""
+import pandas as pd, os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+df = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "561380.csv"))
+date_col = "date" if "date" in df.columns else "日期"
+df[date_col] = pd.to_datetime(df[date_col])
+df = df.sort_values(date_col)
+
+# 1. Check around split date
+print("=== 拆分日期附近 (2026-06-20 ~ 2026-06-30) ===")
+mask = (df[date_col] >= "2026-06-20") & (df[date_col] <= "2026-06-30")
+for _, row in df[mask].iterrows():
+    print(f"  {row[date_col].strftime('%Y-%m-%d')}: O={row['open']:.4f} H={row['high']:.4f} L={row['low']:.4f} C={row['close']:.4f}")
+
+# 2. Check for date gaps > 5 days
+print("\n=== 日期断档（>5天）===")
+for i in range(1, len(df)):
+    gap = (df[date_col].iloc[i] - df[date_col].iloc[i-1]).days
+    if gap > 5:
+        print(f"  {df[date_col].iloc[i-1].strftime('%Y-%m-%d')} → {df[date_col].iloc[i].strftime('%Y-%m-%d')}: {gap}天")
+
+# 3. Check overall date coverage
+print(f"\n总行数: {len(df)}")
+print(f"日期范围: {df[date_col].iloc[0].strftime('%Y-%m-%d')} ~ {df[date_col].iloc[-1].strftime('%Y-%m-%d')}")
+expected_days = (df[date_col].iloc[-1] - df[date_col].iloc[0]).days
+print(f"跨越天数: {expected_days}, 数据覆盖率: {len(df)/max(expected_days/1.4, 1)*100:.0f}%")
+
+# 4. Print first and last 3 rows
+print("\n=== 最早3条 ===")
+for _, row in df.head(3).iterrows():
+    print(f"  {row[date_col].strftime('%Y-%m-%d')}: C={row['close']:.4f}")
+print("=== 最晚3条 ===")
+for _, row in df.tail(3).iterrows():
+    print(f"  {row[date_col].strftime('%Y-%m-%d')}: C={row['close']:.4f}")

@@ -1,0 +1,30 @@
+<h2>修正：A500与沪深300统一归入宽基</h2>
+<p class="subtitle">表格可以分两行记录两只ETF，但配置进度只按“宽基”一个仓位计算。</p>
+
+<div class="mockup">
+  <div class="mockup-header">计划表：同一宽基组，保留两个标的行</div>
+  <div class="mockup-body" style="padding:18px;background:#f8faf9">
+    <div style="display:grid;grid-template-columns:150px 1fr 1fr 1fr;gap:8px;font-size:13px">
+      <div style="padding:10px;color:#667085">宽基40%</div><div style="padding:10px;text-align:center;color:#667085">第1笔</div><div style="padding:10px;text-align:center;color:#667085">第2笔</div><div style="padding:10px;text-align:center;color:#667085">第3笔</div>
+      <div style="background:#e6f3ee;border-left:6px solid #1f8a70;border-radius:8px;padding:12px"><b style="color:#14634f">A500</b><br><small>宽基 · 深绿</small></div><div style="background:#d2eee5;border:1px solid #8ccdb9;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div><div style="background:#f3fbf8;border:1px solid #c5e6dc;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div><div style="background:#f3fbf8;border:1px solid #c5e6dc;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div>
+      <div style="background:#eef8f4;border-left:6px solid #64a891;border-radius:8px;padding:12px"><b style="color:#28745d">沪深300</b><br><small>宽基 · 浅绿</small></div><div style="background:#dcefe8;border:1px solid #9bcbb9;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div><div style="background:#f5fbf8;border:1px solid #cbe5da;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div><div style="background:#f5fbf8;border:1px solid #cbe5da;border-radius:8px;padding:12px;text-align:center">□ ¥3,750</div>
+      <div style="background:#fff5df;border-left:6px solid #c58a22;border-radius:8px;padding:12px"><b style="color:#8a5e0b">黄金</b><br><small>黄色</small></div><div style="background:#fffaf0;border:1px solid #efd9a4;border-radius:8px;padding:12px;text-align:center">□ ¥2,500</div><div style="background:#fffaf0;border:1px solid #efd9a4;border-radius:8px;padding:12px;text-align:center">□ ¥2,500</div><div style="background:#fffaf0;border:1px solid #efd9a4;border-radius:8px;padding:12px;text-align:center">□ ¥2,500</div>
+      <div style="background:#f0ebfb;border-left:6px solid #7756b5;border-radius:8px;padding:12px"><b style="color:#563995">科创50</b><br><small>紫色</small></div><div style="background:#faf8fe;border:1px solid #d8cbea;border-radius:8px;padding:12px;text-align:center">□ ¥2,552.5</div><div style="background:#faf8fe;border:1px solid #d8cbea;border-radius:8px;padding:12px;text-align:center">□ ¥2,552.5</div><div style="background:#faf8fe;border:1px solid #d8cbea;border-radius:8px;padding:12px;text-align:center">□ ¥2,552.5</div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">账户配置总进度：只有一个宽基绿色区段</div>
+  <div class="mockup-body" style="padding:20px;background:white">
+    <div style="display:flex;height:62px;border-radius:10px;overflow:hidden;border:2px solid #cfd8d4">
+      <div style="width:40%;background:#e6f3ee;position:relative;border-right:3px solid white"><div style="width:60%;height:100%;background:#1f8a70"></div><span style="position:absolute;left:10px;top:9px;color:white;font-size:12px"><b>宽基 40%</b><br>A500＋沪深300合计</span></div>
+      <div style="width:10%;background:#f0ebfb;position:relative;border-right:3px solid white"><div style="width:46%;height:100%;background:#7756b5"></div><span style="position:absolute;left:8px;top:9px;font-size:11px"><b>科创50 10%</b></span></div>
+      <div style="width:20%;background:#fff5df;position:relative;border-right:3px solid white"><div style="width:78%;height:100%;background:#c58a22"></div><span style="position:absolute;left:9px;top:9px;font-size:11px"><b>黄金 20%</b></span></div>
+      <div style="width:30%;background:#edf0f2;position:relative"><span style="position:absolute;left:9px;top:9px;font-size:11px"><b>现金/其他 30%</b></span></div>
+    </div>
+    <p style="margin:12px 0 0;color:#667085;font-size:12px">宽基内部的A500和沪深300只在计划表中分行记录；总进度和目标比例始终合并计算。</p>
+  </div>
+</div>
+
+<div class="options" style="margin-top:18px"><div class="option" data-choice="approve-wide-merged" onclick="toggleSelect(this)"><div class="letter">✓</div><div class="content"><h3>宽基合并正确</h3><p>两只标的分行记账，底部只显示一个宽基目标区段。</p></div></div><div class="option" data-choice="revise-wide-merged" onclick="toggleSelect(this)"><div class="letter">↻</div><div class="content"><h3>还要调整</h3><p>告诉我宽基内部还需要怎样区分。</p></div></div></div>

@@ -1,0 +1,29 @@
+"""检查所有 ETF 缓存数据的分拆跳变和日期范围"""
+import pandas as pd, os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from dashboard import _RS_BENCHMARK
+
+cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+for sym in sorted(set(list(_RS_BENCHMARK.keys()))):
+    path = os.path.join(cache_dir, f"{sym}.csv")
+    if not os.path.exists(path):
+        print(f"{sym}: MISSING CACHE")
+        continue
+    df = pd.read_csv(path)
+    date_col = "date" if "date" in df.columns else "日期"
+    df[date_col] = pd.to_datetime(df[date_col])
+    df = df.sort_values(date_col)
+    close = df["close"].values
+    pct_changes = []
+    for i in range(1, len(close)):
+        if close[i-1] > 0:
+            pct = abs(close[i]/close[i-1] - 1)
+            if pct > 0.15:
+                pct_changes.append((df[date_col].iloc[i].strftime("%Y-%m-%d"), close[i-1], close[i], pct*100))
+    first = df[date_col].iloc[0].strftime("%Y-%m-%d")
+    last = df[date_col].iloc[-1].strftime("%Y-%m-%d")
+    first_close = df["close"].iloc[0]
+    last_close = df["close"].iloc[-1]
+    jump_str = "; ".join([f"{d}: {c1:.3f}→{c2:.3f} ({p:.0f}%)" for d,c1,c2,p in pct_changes[:6]]) if pct_changes else "OK"
+    print(f"{sym}: {first}({first_close:.3f}) ~ {last}({last_close:.3f}), {len(df)} rows, jumps: {jump_str}")

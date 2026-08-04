@@ -1,0 +1,3 @@
+import matplotlib.font_manager
+fonts = [f.name for f in matplotlib.font_manager.fontManager.ttflist if any(k in f.name.lower() for k in ['hei','yahei','song','ming','kai','fang','microsoft','simsun','cjk','noto'])]
+print('\n'.join(sorted(set(fonts))))

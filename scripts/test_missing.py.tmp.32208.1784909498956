@@ -1,0 +1,23 @@
+import sys
+sys.path.insert(0, r'C:\Users\admin\Desktop\etf量化工具')
+from breadth import _fetch_today_snapshot_sina_http, fetch_constituents
+
+constituents = fetch_constituents('000510', use_sina=False)
+symbols = constituents['symbol'].tolist()
+prices = _fetch_today_snapshot_sina_http(symbols)
+
+missing = [s for s in symbols if s not in prices]
+print(f'Missing ({len(missing)}):')
+for m in missing:
+    print(f'  {repr(m)} starts with {m[0]}')
+
+print('\nDict key samples:')
+for i, k in enumerate(prices):
+    if i >= 5: break
+    print(f'  repr={repr(k)}, len={len(k)}')
+
+# Check if any prices dict key has wrong length
+bad_keys = [k for k in prices if len(str(k)) != 6]
+print(f'\nNon-6-digit keys: {len(bad_keys)}')
+for k in bad_keys[:5]:
+    print(f'  {repr(k)}')

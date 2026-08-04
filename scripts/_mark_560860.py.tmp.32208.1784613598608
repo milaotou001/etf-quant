@@ -1,0 +1,7 @@
+import sys; sys.path.insert(0, '.')
+from purchase_plan import load_purchase_plan, mark_item_bought, save_purchase_plan
+p = load_purchase_plan()
+item = p['assets']['560860']['items'][0]
+p = mark_item_bought(p, item['id'], '2026-07-21')
+save_purchase_plan(p)
+print('marked:', item['id'], item['planned_amount'])

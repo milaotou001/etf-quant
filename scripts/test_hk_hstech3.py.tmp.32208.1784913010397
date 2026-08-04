@@ -1,0 +1,49 @@
+"""Try alternative HSTECH constituent sources."""
+import requests
+import re
+
+# 1. Try Wikipedia "Hang Seng Index" page - HSTECH might be a subsection
+print("=== Wikipedia Hang Seng Index page (searching for HSTECH section) ===")
+r = requests.get('https://en.wikipedia.org/wiki/Hang_Seng_Index',
+                 headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+# Search for HSTECH/Tech references
+for pat in [r'Hang Seng.*Tech', r'HSTECH', r'Tech Index']:
+    matches = re.findall(pat, r.text, re.IGNORECASE)
+    if matches:
+        print(f'  {pat}: found')
+
+# 2. Try Wikipedia search API for Hang Seng Tech Index
+print("\n=== Wikipedia Search API ===")
+api = 'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Hang+Seng+Tech+Index+constituents&format=json'
+r2 = requests.get(api, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+results = r2.json().get('query', {}).get('search', [])
+for result in results[:5]:
+    print(f"  {result['title']}")
+
+# 3. Try akshare index_stock_cons for HSTECH
+print("\n=== akshare index_stock_cons_csindex ===")
+try:
+    import akshare as ak
+    # Try various codes
+    for code in ['HSTECH', 'hstech', 'HSI', 'HSCEI']:
+        try:
+            df = ak.index_stock_cons_csindex(symbol=code)
+            print(f'{code}: {len(df)} rows, cols={list(df.columns[:5])}')
+            if len(df) > 0:
+                print(f'  Row 0: {df.iloc[0].tolist()[:5]}')
+                if len(df) >= 10:
+                    print(f'  Sample codes: {df.iloc[:,4].head(5).tolist()}')
+        except Exception as e:
+            print(f'{code}: {str(e)[:80]}')
+except Exception as e:
+    print(f'akshare error: {e}')
+
+# 4. Try Eastmoney HK stock list
+print("\n=== Eastmoney HK ===")
+try:
+    import akshare as ak
+    df = ak.stock_hk_spot_em()
+    print(f'stock_hk_spot_em: {len(df)} rows')
+    print(f'Cols: {list(df.columns[:10])}')
+except Exception as e:
+    print(f'Error: {e}')

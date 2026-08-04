@@ -1,0 +1,12 @@
+import sys
+sys.path.insert(0, r"C:\Users\admin\Desktop\etf量化工具")
+from data import load_data
+from indicators import rsi, sma
+
+for sym, name, amt in [("561380","电网",2000),("516150","稀土",1500)]:
+    df = load_data(sym)
+    c = df["close"]
+    r = rsi(c)
+    close = c.iloc[-1]
+    shares = int(amt / close / 100) * 100
+    print(f"{name} {sym}: 价格 {close:.4f}  RSI {r.iloc[-1]:.1f}  首笔 {amt}元 ≈ {shares}股")

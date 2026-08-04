@@ -1,0 +1,16 @@
+"""Full load_breadth integration test for A500."""
+import sys, time
+sys.path.insert(0, r'C:\Users\admin\Desktop\etf量化工具')
+from breadth import load_breadth
+
+t0 = time.time()
+result = load_breadth('563360', force_refresh=True)
+elapsed = time.time() - t0
+
+print(f'load_breadth took {elapsed:.1f}s')
+print()
+for k, v in result.items():
+    if k == 'explanation':
+        print(f'{k}: {v[:120]}...')
+    else:
+        print(f'{k}: {v}')

@@ -1,0 +1,14 @@
+import sys; sys.path.insert(0, '.')
+import time
+from breadth import fetch_constituents, fetch_constituent_klines, compute_breadth
+
+t0 = time.time()
+constituents = fetch_constituents('000300', True, True)
+codes = constituents['symbol'].tolist()
+print(f'Constituents: {len(codes)}')
+
+kline = fetch_constituent_klines(codes, '000300', force_refresh=True)
+print(f'Fetched: {len(kline)} stocks in {time.time()-t0:.1f}s')
+
+b = compute_breadth(kline)
+print(f'MA8: {b["pct_above_ma8"]}%, MA21: {b["pct_above_ma21"]}%, valid: {b["valid_stocks"]}/{b["total_stocks"]}')

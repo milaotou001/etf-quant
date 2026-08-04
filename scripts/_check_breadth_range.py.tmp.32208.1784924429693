@@ -1,0 +1,26 @@
+"""检查各指数广度数据的实际日期范围"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pandas as pd
+from breadth import load_price_history, BREADTH_INDEX_MAP
+
+for etf_code, info in BREADTH_INDEX_MAP.items():
+    index_code = info["index_code"]
+    name = info["name"]
+    print(f"\n=== {name} ({index_code}) ===")
+
+    # 价格历史（成分股）
+    hist = load_price_history(index_code)
+    if not hist.empty:
+        hist.index = pd.to_datetime(hist.index)
+        print(f"  成分股价格: {len(hist)} 天, {hist.index[0].date()} ~ {hist.index[-1].date()}, {len(hist.columns)} 只股票")
+
+    # ETF/指数价格
+    cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", f"{etf_code}.csv")
+    if os.path.exists(cache_path):
+        df = pd.read_csv(cache_path)
+        date_col = "date" if "date" in df.columns else "日期"
+        df[date_col] = pd.to_datetime(df[date_col])
+        print(f"  ETF价格: {len(df)} 天, {df[date_col].iloc[0].date()} ~ {df[date_col].iloc[-1].date()}")
+    else:
+        print(f"  ETF价格: 缓存不存在")

@@ -1,0 +1,80 @@
+import sys
+sys.path.insert(0, "C:/Users/admin/Desktop/etf量化工具")
+
+from data import load_data
+from indicators import rsi, sma, macd
+
+targets = [
+    ("588000", "科创50"),
+    ("159995", "芯片"),
+    ("159819", "AI"),
+    ("561380", "电网设备"),
+    ("516150", "稀土"),
+    ("159570", "港股创新药"),
+    ("159755", "电池"),
+]
+
+print("=" * 100)
+print(f"{'标的':<10} {'收盘':>8} {'今日':>8} {'RSI(14)':>8} {'MA60':>8} {'距MA60':>8} {'年内':>8} {'MA20':>8}")
+print("=" * 100)
+
+for sym, name in targets:
+    df = load_data(sym)
+    close = df["close"]
+    r = rsi(close)
+    ma20 = sma(close, 20)
+    ma60 = sma(close, 60)
+
+    latest_close = close.iloc[-1]
+    prev_close = close.iloc[-2]
+    latest_rsi = r.iloc[-1]
+    latest_ma20 = ma20.iloc[-1]
+    latest_ma60 = ma60.iloc[-1]
+    ma60_pct = (latest_close / latest_ma60 - 1) * 100
+
+    jan = close[close.index >= "2026-01-01"]
+    ytd = (latest_close / jan.iloc[0] - 1) * 100 if len(jan) > 0 else float("nan")
+    daily_chg = (latest_close / prev_close - 1) * 100
+
+    print(
+        f"{name:<8} {latest_close:>8.4f} {daily_chg:>+7.2f}% {latest_rsi:>8.1f} "
+        f"{latest_ma60:>8.4f} {ma60_pct:>+7.1f}% {ytd:>+7.1f}% {latest_ma20:>8.4f}"
+    )
+
+print()
+print("MACD 动能 (DIF / DEA / HIST):")
+for sym, name in targets:
+    df = load_data(sym)
+    close = df["close"]
+    m = macd(close)
+    latest = m.iloc[-1]
+    prev = m.iloc[-2]
+    hist_col = "histogram" if "histogram" in m.columns else "hist"
+    trend = "改善" if latest[hist_col] > prev[hist_col] else "恶化"
+    print(
+        f"{name:<8} DIF {latest.dif:>+.4f}  DEA {latest.dea:>+.4f}  "
+        f"HIST {latest[hist_col]:>+.4f}  ({trend})"
+    )
+
+print()
+print("RSI 低位检查 (< 35 股票ETF / < 30 黄金):")
+for sym, name in targets:
+    df = load_data(sym)
+    close = df["close"]
+    r = rsi(close)
+    latest_rsi = r.iloc[-1]
+    rsi_min_20 = r.iloc[-20:].min()
+    rsi_min_60 = r.iloc[-60:].min()
+    print(
+        f"{name:<8} 当前RSI {latest_rsi:.1f}  "
+        f"20日最低 {rsi_min_20:.1f}  60日最低 {rsi_min_60:.1f}"
+    )
+
+print()
+print("近期回撤 (从60日最高):")
+for sym, name in targets:
+    df = load_data(sym)
+    high_60 = df["close"].iloc[-60:].max()
+    latest = df["close"].iloc[-1]
+    dd = (latest / high_60 - 1) * 100
+    print(f"{name:<8} 60日最高 {high_60:.4f}  当前 {latest:.4f}  回撤 {dd:+.1f}%")

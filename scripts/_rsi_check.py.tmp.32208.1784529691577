@@ -1,0 +1,32 @@
+"""Temp RSI check for 588000."""
+from data import load_data
+
+df = load_data("588000")
+close = df["close"]
+print(f"数据天数: {len(df)}, 日期: {df.index[0].strftime('%Y-%m-%d')} ~ {df.index[-1].strftime('%Y-%m-%d')}")
+
+delta = close.diff()
+gain = delta.clip(lower=0)
+loss = -delta.clip(upper=0)
+
+# Wilder's RSI (EMA method)
+avg_gain = gain.ewm(alpha=1 / 14, adjust=False).mean()
+avg_loss = loss.ewm(alpha=1 / 14, adjust=False).mean()
+rs = avg_gain / avg_loss
+rsi_wilder = 100 - (100 / (1 + rs))
+
+# SMA method
+avg_gain_sma = gain.rolling(14).mean()
+avg_loss_sma = loss.rolling(14).mean()
+rs_sma = avg_gain_sma / avg_loss_sma
+rsi_sma = 100 - (100 / (1 + rs_sma))
+
+print(f"RSI Wilder(14): {rsi_wilder.iloc[-1]:.1f}")
+print(f"RSI SMA(14):    {rsi_sma.iloc[-1]:.1f}")
+
+print("\n近10日:")
+recent = close.tail(10)
+for i in range(len(recent)):
+    idx_pos = close.index.get_loc(recent.index[i])
+    chg = delta.iloc[idx_pos]
+    print(f"  {recent.index[i].strftime('%m-%d')}  close={recent.iloc[i]:.3f}  chg={chg:+.3f}")

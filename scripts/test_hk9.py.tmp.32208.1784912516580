@@ -1,0 +1,41 @@
+"""Find HSTECH constituents."""
+import requests
+from bs4 import BeautifulSoup
+
+# Try different Wikipedia URLs
+urls = [
+    'Hang_Seng_Tech_Index',
+    'Hang_Seng_Technology_Index',
+    'Hang_Seng_TECH_Index',
+]
+for url in urls:
+    full_url = f'https://en.wikipedia.org/wiki/{url}'
+    r = requests.get(full_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+    if r.status_code == 200:
+        soup = BeautifulSoup(r.text, 'html.parser')
+        title = soup.find('title')
+        print(f'{url}: 200, title={title.text if title else "N/A"}')
+        # Look for SEHK codes
+        for table in soup.find_all('table', class_='wikitable'):
+            rows = table.find_all('tr')
+            codes = []
+            for row in rows[1:]:
+                for td in row.find_all('td'):
+                    text = td.get_text(strip=True)
+                    if text.startswith('SEHK:'):
+                        codes.append(text.replace('SEHK:', '').zfill(5))
+                        break
+            if len(codes) >= 10:
+                print(f'  Found {len(codes)} codes: {codes}')
+                break
+    else:
+        print(f'{url}: {r.status_code}')
+
+# Also try the redirect
+print("\n=== Trying redirects ===")
+for query in ['Hang Seng TECH Index', 'Hang Sheng Tech Index']:
+    api = f'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&format=json'
+    r2 = requests.get(api, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+    results = r2.json().get('query', {}).get('search', [])
+    for result in results[:3]:
+        print(f"  {result['title']}: {result['snippet'][:80]}")

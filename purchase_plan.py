@@ -28,7 +28,7 @@ TARGETS = {
     "159570": {"name": "港股创新药", "target": 8_000.0, "color": "#db2777", "soft_color": "#fce7f3"},
     "560860": {"name": "工业有色", "target": 6_000.0, "color": "#b45309", "soft_color": "#fef3c7"},
     "513180": {"name": "恒生科技", "target": 8_000.0, "color": "#0d9488", "soft_color": "#ccfbf1"},
-    "588000": {"name": "科创50（暂停）", "target": 28_500.0, "color": "#7c3aed", "soft_color": "#ede9fe"},
+    "588000": {"name": "科创50（暂停）", "target": 10_000.0, "color": "#7c3aed", "soft_color": "#ede9fe"},
 }
 
 WIDE_ETF_ALLOCATION = {"first": 0.5, "second": 0.25, "third": 0.25}
@@ -41,18 +41,17 @@ STRATEGIC_PLAN_NOTE = "第1笔等初步止跌；第2笔等回踩确认；第3笔
 STRATEGIC_PLANS = {
     "561380": {
         "rounds": [
-            (1_200.0, 1_800.0, 3_000.0),
-            (800.0, 1_200.0, 2_000.0),
+            (2_000.0, 5_000.0, 3_000.0),
         ],
         "reserved_amount": 10_000.0,
-        "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等半年报验证利润来源",
+        "plan_note": "等止跌/回踩/右侧。" + STRATEGIC_PLAN_NOTE,
     },
     "516150": {
         "rounds": [
-            (1_500.0, 2_500.0, 4_000.0),
+            (1_200.0, 1_800.0, 1_000.0),
         ],
-        "reserved_amount": 8_000.0,
-        "plan_note": STRATEGIC_PLAN_NOTE,
+        "reserved_amount": 4_000.0,
+        "plan_note": "稀土40%+有色60%组合。" + STRATEGIC_PLAN_NOTE,
     },
     "159570": {
         "rounds": [
@@ -63,11 +62,10 @@ STRATEGIC_PLANS = {
     },
     "560860": {
         "rounds": [
-            (720.0, 1_080.0, 1_800.0),
-            (480.0, 720.0, 1_200.0),
+            (1_600.0, 2_400.0, 2_000.0),
         ],
         "reserved_amount": 6_000.0,
-        "plan_note": "第1轮：等止跌/回踩/右侧 · 第2轮：等Q3铜价趋势确认",
+        "plan_note": "稀土40%+有色60%组合。" + STRATEGIC_PLAN_NOTE,
     },
     "513180": {
         "rounds": [
@@ -145,8 +143,8 @@ def default_purchase_plan() -> dict:
 
     assets["588000"] = {
         **copy.deepcopy(TARGETS["588000"]),
-        "plan_note": "暂停：半导体权重过高（50%+），与科技簇（集成电路/AI）同步暂停；待科技簇解冻后统一评估。",
-        "items": [_new_item("588000", number, 2_552.5) for number in range(1, 7)],
+        "plan_note": "暂停：半导体权重过高（50%+），待科技簇解冻后分三笔（20/30/50）执行。",
+        "items": [_new_item("588000", 1, 2_000.0), _new_item("588000", 2, 3_000.0), _new_item("588000", 3, 5_000.0)],
     }
 
     start = date(2026, 7, 10)

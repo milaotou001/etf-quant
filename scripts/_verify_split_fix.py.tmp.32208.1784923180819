@@ -1,0 +1,39 @@
+"""检查拆分修复效果——拆分日前后价格是否连续"""
+import pandas as pd, os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+# 561380 split at 2026-06-25, 159663 at 2026-07-07, 159995 at 2026-07-07
+checks = {
+    "561380": "2026-06-25",
+    "159663": "2026-07-07",
+    "159995": "2026-07-07",
+    "516090": "2021-11-29",
+}
+
+for sym, split_date in checks.items():
+    path = os.path.join(cache_dir, f"{sym}.csv")
+    df = pd.read_csv(path)
+    date_col = "date" if "date" in df.columns else "日期"
+    df[date_col] = pd.to_datetime(df[date_col])
+    df = df.sort_values(date_col)
+
+    split_dt = pd.Timestamp(split_date)
+    # Find the 3 rows before and 3 rows after split
+    before = df[df[date_col] < split_dt].tail(3)
+    after = df[df[date_col] >= split_dt].head(3)
+
+    print(f"\n=== {sym} 拆分日 {split_date} ===")
+    for _, row in before.iterrows():
+        print(f"  前 {row[date_col].strftime('%Y-%m-%d')}: C={row['close']:.4f}")
+    print(f"  --- 拆分日 ---")
+    for _, row in after.iterrows():
+        print(f"  后 {row[date_col].strftime('%Y-%m-%d')}: C={row['close']:.4f}")
+
+    # Check continuity
+    pre_last = before["close"].iloc[-1] if len(before) > 0 else None
+    post_first = after["close"].iloc[0] if len(after) > 0 else None
+    if pre_last and post_first:
+        ratio = post_first / pre_last
+        print(f"  前/后比值: {ratio:.4f} (理想值 ~1.0)")

@@ -1,0 +1,55 @@
+"""Extract HSTECH constituents from Chinese Wikipedia using BeautifulSoup."""
+import requests
+from bs4 import BeautifulSoup
+import re
+
+# Use simplified Chinese Wikipedia
+url = 'https://zh.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+soup = BeautifulSoup(r.text, 'html.parser')
+
+# Find all wikitable tables
+tables = soup.find_all('table', class_='wikitable')
+print(f'Found {len(tables)} wikitables')
+
+for i, table in enumerate(tables):
+    rows = table.find_all('tr')
+    if len(rows) < 10:
+        continue
+
+    # Get headers
+    headers = [th.get_text(strip=True) for th in rows[0].find_all('th')]
+    print(f'\nTable {i}: {len(rows)} rows, headers: {headers[:5]}')
+
+    # Check if this looks like a constituent table (has "代號" or "代码" or "Code" in headers)
+    header_text = ' '.join(headers)
+    if not any(kw in header_text for kw in ['代號', '代码', 'Code', '編號', '股份']):
+        print(f'  Skip: no code column in headers')
+        continue
+
+    # Extract stock codes from all links in this table
+    all_codes = []
+    for link in table.find_all('a'):
+        href = link.get('href', '')
+        text = link.get_text(strip=True)
+        # HK stock codes: links to stock pages or directly as text
+        # Wiki links often have /wiki/XXXXX or contain digits
+        if href.startswith('/wiki/') and text.replace('.', '').replace('HK', '').replace(':', '').replace(' ', '').isdigit():
+            code = text.replace('.HK', '').replace('SEHK:', '').strip()
+            if code.isdigit() and len(code) <= 5:
+                all_codes.append(code)
+
+    # Also try extracting from td text directly
+    if not all_codes:
+        for row in rows[1:]:
+            for td in row.find_all('td'):
+                text = td.get_text(strip=True)
+                # Look for 5-digit numbers
+                codes = re.findall(r'\b(\d{4,5})\b', text)
+                for c in codes:
+                    if re.match(r'^0\d{3,4}$', c):  # HK codes start with 0
+                        all_codes.append(c)
+
+    if all_codes:
+        unique = sorted(set(c.zfill(5) for c in all_codes))
+        print(f'  Found {len(unique)} unique codes: {unique}')

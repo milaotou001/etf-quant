@@ -1,0 +1,34 @@
+"""Parse Sina HK price format and Wikipedia HSI constituents."""
+import requests
+import pandas as pd
+from io import StringIO
+
+# Test Sina HK price parsing
+print("=== Sina HK Price Format ===")
+r = requests.get('http://hq.sinajs.cn/list=hk00700', headers={'Referer': 'https://finance.sina.com.cn'}, timeout=10)
+line = r.text.strip()
+print(f'Full: {line}')
+# Parse: var hq_str_hk00700="fields"
+parts = line.split('="')
+if len(parts) == 2:
+    code = parts[0].replace('var hq_str_', '')
+    data = parts[1].rstrip('"')
+    fields = data.split(',')
+    print(f'\nCode: {code}')
+    print(f'Fields count: {len(fields)}')
+    for i, f in enumerate(fields):
+        print(f'  [{i}] {f}')
+
+# Parse Wikipedia for HSI constituents
+print("\n=== HSI Constituents from Wikipedia ===")
+r = requests.get('https://en.wikipedia.org/wiki/Hang_Seng_Index', headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+# Find the constituent table - it has class wikitable
+tables = pd.read_html(StringIO(r.text))
+print(f'Found {len(tables)} tables')
+for i, t in enumerate(tables):
+    cols = [str(c)[:30] for c in t.columns]
+    print(f'Table {i}: {t.shape}, cols={cols}')
+    # Look for stock code column
+    if t.shape[0] >= 50:
+        print(f'  Row 0: {t.iloc[0].tolist()[:5]}')
+        print(f'  Row 1: {t.iloc[1].tolist()[:5]}')

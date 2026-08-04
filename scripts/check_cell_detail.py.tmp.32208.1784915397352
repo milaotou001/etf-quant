@@ -1,0 +1,130 @@
+"""Show empty/short-period data per cell for HSTECH specifically."""
+import sys
+sys.path.insert(0, r'C:\Users\admin\Desktop\etf量化工具')
+import breadth
+import numpy as np
+import pandas as pd
+from dashboard import build_market_state, compute_indicators
+from data import load_data
+from instruments import get_instrument
+
+STATE_ORDER = breadth.STATE_ORDER
+COL_ORDER = breadth.COL_ORDER
+COL_NAMES = breadth.COL_NAMES
+
+# Load HSTECH data
+index_code = "HSTECH"
+etf_symbol = "513180"
+
+hist = breadth.load_price_history(index_code)
+
+daily_ma21 = {}
+for i in range(21, len(hist) + 1):
+    window = hist.iloc[:i]
+    b = breadth.compute_breadth_from_history(window, len(hist.columns))
+    date_str = window.index[-1].strftime("%Y-%m-%d")
+    daily_ma21[date_str] = b.get("pct_above_ma21")
+
+spec = get_instrument(etf_symbol)
+df = load_data(symbol=etf_symbol, force_refresh=False)
+df = compute_indicators(df, spec)
+
+def classify_state(label):
+    return label.split("（")[0] if "（" in label else label
+
+rows = []
+for idx in range(60, len(df)):
+    row_date = df.index[idx].strftime("%Y-%m-%d")
+    if row_date not in daily_ma21 or daily_ma21[row_date] is None:
+        continue
+
+    etf_slice = df.iloc[:idx + 1]
+    try:
+        ms = build_market_state(etf_slice, instrument=spec)
+        base_state = classify_state(ms.get("state_label", ""))
+        if base_state not in breadth.FRAMEWORK:
+            continue
+    except Exception:
+        continue
+
+    ma21_pct = daily_ma21[row_date]
+    prev_idx = df.index[max(0, idx - 5)]
+    prev_date = prev_idx.strftime("%Y-%m-%d")
+    prev_ma21 = daily_ma21.get(prev_date)
+
+    if ma21_pct > 70:
+        breadth_label = "强势宽度"
+    elif ma21_pct < 30:
+        breadth_label = "宽度低迷"
+    else:
+        if prev_ma21 is not None:
+            change = ma21_pct - prev_ma21
+            if change < -5:
+                breadth_label = "宽度恶化"
+            elif change > 5:
+                breadth_label = "宽度修复"
+            else:
+                breadth_label = "宽度中性"
+        else:
+            breadth_label = "宽度中性"
+
+    breadth_col = breadth._classify_breadth_col(breadth_label)
+    current_close = df.iloc[idx]["close"]
+
+    fwd_5d = None
+    fwd_10d = None
+    fwd_20d = None
+    if idx + 5 < len(df):
+        fwd_5d = (df.iloc[idx + 5]["close"] / current_close - 1) * 100
+    if idx + 10 < len(df):
+        fwd_10d = (df.iloc[idx + 10]["close"] / current_close - 1) * 100
+    if idx + 20 < len(df):
+        fwd_20d = (df.iloc[idx + 20]["close"] / current_close - 1) * 100
+
+    rows.append({
+        "state": base_state, "breadth_col": breadth_col,
+        "fwd_5d": fwd_5d, "fwd_10d": fwd_10d, "fwd_20d": fwd_20d,
+    })
+
+df_r = pd.DataFrame(rows)
+print(f"恒生科技 总计 {len(df_r)} 天\n")
+
+# Show each cell with 5d/10d/20d stats
+for state in STATE_ORDER:
+    for col in COL_ORDER:
+        d = df_r[(df_r["state"] == state) & (df_r["breadth_col"] == col)]
+        n = len(d)
+        label = breadth.FRAMEWORK.get(state, {}).get(col, ("—",))[0]
+        display = f"{state[:4]}×{COL_NAMES[col][:4]}"
+        if n < 5:
+            print(f'{display:<28s} ({label}): 仅{n}天, 数据不足')
+            continue
+        f5_m = d["fwd_5d"].dropna().mean()
+        f5_w = (d["fwd_5d"].dropna() > 0).mean() * 100
+        f10_m = d["fwd_10d"].dropna().mean()
+        f10_w = (d["fwd_10d"].dropna() > 0).mean() * 100
+        f20_m = d["fwd_20d"].dropna().mean()
+        f20_w = (d["fwd_20d"].dropna() > 0).mean() * 100
+        print(f'{display:<28s} ({label}): {n}天  | 5d:{f5_m:+.1f}% 胜{f5_w:.0f}% | 10d:{f10_m:+.1f}% 胜{f10_w:.0f}% | 20d:{f20_m:+.1f}% 胜{f20_w:.0f}%')
+
+# Show what cell HSTECH is in right now
+print("\n=== 恒生科技当前状态 ===")
+ms_now = build_market_state(df, instrument=spec)
+state_now = classify_state(ms_now.get("state_label", ""))
+latest_ma21 = daily_ma21.get(df.index[-1].strftime("%Y-%m-%d"))
+print(f'日期: {df.index[-1].strftime("%Y-%m-%d")}')
+print(f'市场状态: {ms_now.get("state_label")}')
+print(f'MA21宽度: {latest_ma21:.1f}%')
+print(f'MA21趋势: {ms_now.get("ma21_direction", "?")}')
+print(f'MA60趋势: {ms_now.get("ma60_direction", "?")}')
+# Check recent history
+print(f'\n最近10天状态变化:')
+for i in range(max(60, len(df)-10), len(df)):
+    d = df.index[i].strftime("%Y-%m-%d")
+    if d in daily_ma21:
+        s = df.iloc[:i+1]
+        try:
+            ms = build_market_state(s, instrument=spec)
+            print(f'  {d}: {classify_state(ms.get("state_label",""))} | MA21宽度 {daily_ma21[d]:.1f}%')
+        except:
+            pass

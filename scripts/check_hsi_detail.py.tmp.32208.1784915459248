@@ -1,0 +1,63 @@
+"""Show specific cell comparison: HSI vs HSTECH."""
+import sys
+sys.path.insert(0, r'C:\Users\admin\Desktop\etf量化工具')
+import breadth, numpy as np, pandas as pd
+from dashboard import build_market_state, compute_indicators
+from data import load_data
+from instruments import get_instrument
+
+def get_cell_data(index_code, etf_symbol):
+    hist = breadth.load_price_history(index_code)
+    daily_ma21 = {}
+    for i in range(21, len(hist) + 1):
+        window = hist.iloc[:i]
+        b = breadth.compute_breadth_from_history(window, len(hist.columns))
+        daily_ma21[window.index[-1].strftime("%Y-%m-%d")] = b.get("pct_above_ma21")
+
+    spec = get_instrument(etf_symbol)
+    df = load_data(symbol=etf_symbol, force_refresh=False)
+    df = compute_indicators(df, spec)
+
+    rows = []
+    for idx in range(60, len(df)):
+        rd = df.index[idx].strftime("%Y-%m-%d")
+        if rd not in daily_ma21 or daily_ma21[rd] is None:
+            continue
+        try:
+            ms = build_market_state(df.iloc[:idx+1], instrument=spec)
+            bs = ms.get("state_label","").split("（")[0]
+            if bs not in breadth.FRAMEWORK: continue
+        except: continue
+        mp = daily_ma21[rd]
+        pp = daily_ma21.get(df.index[max(0,idx-5)].strftime("%Y-%m-%d"))
+        if mp > 70: bl = "强势宽度"
+        elif mp < 30: bl = "宽度低迷"
+        elif pp is not None and mp - pp < -5: bl = "宽度恶化"
+        elif pp is not None and mp - pp > 5: bl = "宽度修复"
+        else: bl = "宽度中性"
+        bc = breadth._classify_breadth_col(bl)
+        cp = df.iloc[idx]["close"]
+        f5 = (df.iloc[idx+5]["close"]/cp-1)*100 if idx+5<len(df) else None
+        f10 = (df.iloc[idx+10]["close"]/cp-1)*100 if idx+10<len(df) else None
+        f20 = (df.iloc[idx+20]["close"]/cp-1)*100 if idx+20<len(df) else None
+        rows.append({"state":bs,"breadth_col":bc,"f5":f5,"f10":f10,"f20":f20})
+    return pd.DataFrame(rows)
+
+name = {"HSI":"恒生指数","HSTECH":"恒生科技"}
+for ic, es in [("HSI","159920"),("HSTECH","513180")]:
+    d = get_cell_data(ic, es)
+    print(f"\n=== {name[ic]} ===")
+    # Focus on the cells user cares about
+    for s in ["空头市场","偏空震荡","偏多震荡","多头市场"]:
+        for c in ["strong","neutral","deteriorating"]:
+            cell = d[(d["state"]==s)&(d["breadth_col"]==c)]
+            n = len(cell)
+            if n < 5: continue
+            f5m = cell["f5"].dropna().mean()
+            f5w = (cell["f5"].dropna()>0).mean()*100
+            f10m = cell["f10"].dropna().mean()
+            f10w = (cell["f10"].dropna()>0).mean()*100
+            f20m = cell["f20"].dropna().mean()
+            f20w = (cell["f20"].dropna()>0).mean()*100
+            cn = {0:"偏强",1:"中性",2:"恶化"}[list(breadth.COL_ORDER).index(c)]
+            print(f'  {s[:4]}×{cn}: {n:>3d}d | 5d:{f5m:+.1f}% {f5w:.0f}% | 10d:{f10m:+.1f}% {f10w:.0f}% | 20d:{f20m:+.1f}% {f20w:.0f}%')

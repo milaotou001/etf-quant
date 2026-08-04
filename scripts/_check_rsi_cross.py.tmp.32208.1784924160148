@@ -1,0 +1,19 @@
+"""检查 561380 RSI 上穿 30 的时机"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data import load_data
+from dashboard import compute_indicators
+
+df = load_data("561380", force_refresh=False)
+df = compute_indicators(df)
+
+print("=== RSI 近20天走势 ===")
+for i in range(-20, 0):
+    d = df.index[i].strftime("%Y-%m-%d")
+    rsi = df['rsi'].iloc[i]
+    close = df['close'].iloc[i]
+    prev_rsi = df['rsi'].iloc[i-1] if i > -len(df) else None
+    marker = ""
+    if prev_rsi is not None and rsi > 30 and prev_rsi < 30:
+        marker = " <-- RSI 上穿 30！"
+    print(f"  {d}: close={close:.4f} RSI={rsi:.1f}{marker}")

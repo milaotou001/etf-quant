@@ -1,0 +1,10 @@
+import sys; sys.path.insert(0, '.')
+from purchase_plan import load_purchase_plan, save_purchase_plan, PURCHASE_PLAN_PATH
+
+p = load_purchase_plan(str(PURCHASE_PLAN_PATH))
+a = p['assets']['588000']
+a['target'] = 10000.0
+for item in a['items']:
+    item['planned_amount'] = 1666.0
+save_purchase_plan(p)
+print('588000 updated: target=10000, items:', len(a['items']), 'x 1666 =', 1666*6)

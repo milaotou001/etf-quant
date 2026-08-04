@@ -1,0 +1,31 @@
+"""Try Wikipedia pages for HSTECH constituents."""
+import requests
+import re
+
+# Try various Wikipedia URLs
+urls = [
+    'https://zh-yue.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8',
+    'https://zh.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8',
+    'https://en.wikipedia.org/wiki/Hang_Seng_Tech_Index',
+    'https://en.wikipedia.org/wiki/Hang_Seng_Technology_Index',
+]
+
+for url in urls:
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+        print(f'{url}: {r.status_code}, len={len(r.text)}')
+        if r.status_code == 200:
+            # Search for SEHK codes
+            sehk = re.findall(r'SEHK:\s*(\d+)', r.text)
+            print(f'  SEHK codes: {len(sehk)} - {sorted(set(sehk))[:20]}')
+            # Also search for 5-digit codes
+            codes5 = set(re.findall(r'\b(\d{5})\b', r.text))
+            print(f'  5-digit codes: {len(codes5)}, sample: {sorted(codes5)[:20]}')
+            # Look for HSTECH/constituent table
+            if 'constituent' in r.text.lower() or 'component' in r.text.lower():
+                print('  Has constituent/component text')
+            if 'stock code' in r.text.lower() or 'ticker' in r.text.lower():
+                print('  Has stock code/ticker text')
+    except Exception as e:
+        print(f'{url}: ERROR - {e}')
+    print()

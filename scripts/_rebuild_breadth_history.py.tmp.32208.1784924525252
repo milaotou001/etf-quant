@@ -1,0 +1,123 @@
+"""重建 A 股指数成分股价格历史：从 2018 年起拉取全量日线，替换现有的 620 天短历史"""
+import sys, os, time, random
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pandas as pd
+import akshare as ak
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "breadth")
+
+# 要重建的指数
+TARGETS = {
+    "000300": "沪深300",
+    "000510": "A500",
+    "000688": "科创50",
+}
+
+START_DATE = "20180101"
+END_DATE = datetime.now().strftime("%Y%m%d")
+MAX_WORKERS = 8
+
+def load_constituents(index_code):
+    """从现有文件读取成分股代码列表"""
+    path = os.path.join(CACHE, f"{index_code}_constituents.csv")
+    if not os.path.exists(path):
+        return []
+    df = pd.read_csv(path)
+    # 代码列可能在 'code' 或第一列
+    if "code" in df.columns:
+        codes = df["code"].astype(str).tolist()
+    else:
+        codes = df.iloc[:, 0].astype(str).tolist()
+    return codes
+
+
+def fetch_one(sym):
+    """拉取单只股票全量日线"""
+    market_sym = f"sh{sym}" if sym.startswith(("5", "6", "9")) else f"sz{sym}"
+    for attempt in range(3):
+        try:
+            df = ak.stock_zh_a_hist_tx(symbol=market_sym, start_date=START_DATE, end_date=END_DATE)
+            if df is not None and not df.empty and "close" in df.columns:
+                result = {}
+                for _, row in df.iterrows():
+                    d = row["date"]
+                    date_str = d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d)[:10]
+                    result[date_str] = float(row["close"])
+                return sym, result, None
+            return sym, {}, f"empty data (attempt {attempt+1})"
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(random.uniform(1.0, 3.0))
+            else:
+                return sym, {}, str(e)
+    return sym, {}, "unknown error"
+
+
+def rebuild_index(index_code, name):
+    """重建单个指数的价格历史"""
+    codes = load_constituents(index_code)
+    if not codes:
+        print(f"{name}: 无成分股数据，跳过")
+        return
+
+    print(f"\n{'='*60}")
+    print(f"{name} ({index_code}): {len(codes)} 只成分股")
+    print(f"日期范围: {START_DATE} ~ {END_DATE}")
+    print(f"并行线程: {MAX_WORKERS}")
+    print(f"预计耗时: {len(codes) / MAX_WORKERS * 2 / 60:.0f} 分钟")
+
+    all_data = {}  # date -> {symbol: price}
+    success = 0
+    failed = 0
+    done = 0
+
+    # 分批并行拉取
+    batch_size = MAX_WORKERS * 4
+    for i in range(0, len(codes), batch_size):
+        batch = codes[i:i+batch_size]
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(fetch_one, sym): sym for sym in batch}
+            for future in as_completed(futures):
+                sym, data, err = future.result()
+                done += 1
+                if err:
+                    failed += 1
+                    if failed <= 5:  # 只打印前几个错误
+                        print(f"  [{done}/{len(codes)}] {sym}: FAILED ({err})")
+                else:
+                    success += 1
+                    for date_str, price in data.items():
+                        all_data.setdefault(date_str, {})[sym] = price
+
+        pct = min(100, (i + batch_size) * 100 // len(codes))
+        print(f"  进度 {pct}%: {done}/{len(codes)} (成功 {success}, 失败 {failed})")
+        time.sleep(random.uniform(0.5, 1.0))  # 批次间隔
+
+    if not all_data:
+        print(f"{name}: 全部拉取失败！")
+        return
+
+    # 构建 DataFrame 并保存
+    df = pd.DataFrame(all_data).T
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+
+    path = os.path.join(CACHE, f"{index_code}_price_history.csv")
+    df.to_csv(path)
+    print(f"{name}: 保存完成 → {path}")
+    print(f"  {len(df)} 天 x {len(df.columns)} 只, {df.index[0].date()} ~ {df.index[-1].date()}")
+    if failed > 0:
+        print(f"  注意: {failed} 只股票拉取失败，广度计算会排除它们")
+
+
+def main():
+    print("重建 A 股指数成分股价格历史")
+    print(f"日期范围: {START_DATE} ~ {END_DATE}")
+    for index_code, name in TARGETS.items():
+        rebuild_index(index_code, name)
+    print("\n完成！请运行 backtest_all_indices.py 更新框架数据。")
+
+if __name__ == "__main__":
+    main()

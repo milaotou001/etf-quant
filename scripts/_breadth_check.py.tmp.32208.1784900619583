@@ -1,0 +1,10 @@
+import sys; sys.path.insert(0, ".")
+from breadth import supports_breadth, fetch_constituents, BREADTH_INDEX_MAP
+
+for symbol, info in BREADTH_INDEX_MAP.items():
+    print(f'{symbol} -> {info["index_code"]} ({info["name"]}): ', end="")
+    try:
+        df = fetch_constituents(info["index_code"], info["use_sina"])
+        print(f"{len(df)} stocks, sample: {df['symbol'].iloc[0]} {df['name'].iloc[0]}")
+    except Exception as e:
+        print(f"ERROR: {e}")

@@ -1,0 +1,14 @@
+import sys; sys.path.insert(0, '.')
+from data import load_data
+from dashboard import compute_indicators
+
+df = load_data('588000', force_refresh=True)
+print('source:', df.attrs.get('source'))
+print('amount_verified:', df.attrs.get('amount_verified'))
+print('refresh_note:', df.attrs.get('refresh_note', ''))
+
+edf = compute_indicators(df)
+print('rvol_available:', edf.attrs.get('rvol_available'))
+rvol = edf['rvol'].dropna()
+print('last rvol:', round(rvol.iloc[-1], 2) if len(rvol) > 0 else 'N/A')
+print('last date:', str(edf.index[-1])[:10])

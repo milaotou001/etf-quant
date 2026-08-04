@@ -1,0 +1,22 @@
+"""Investigate HSTECH Sina page structure."""
+import requests
+import re
+
+url = 'https://vip.stock.finance.sina.com.cn/corp/go.php/vII_NewestComponent/indexid/HSTECH.phtml'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+print(f'Status: {r.status_code}, len: {len(r.text)}')
+
+# Search for various code patterns
+for pat in [r'hk(\d{4,5})', r'>(\d{5})<', r'>(\d{4})<', r'stock_code[^>]*>([^<]+)', r'symbol[^>]*>([^<]+)']:
+    matches = re.findall(pat, r.text)
+    if matches:
+        print(f'{pat}: {len(matches)} matches, sample: {sorted(set(matches))[:10]}')
+    else:
+        print(f'{pat}: 0 matches')
+
+# Show a snippet
+idx = r.text.find('stock')
+if idx > 0:
+    print(f'\nSnippet around stock: ...{r.text[max(0,idx-50):idx+200]}...')
+# Show beginning
+print(f'\nFirst 500 chars: {r.text[:500]}')

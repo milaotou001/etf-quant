@@ -1,0 +1,36 @@
+"""Get HSI constituents from Wikipedia page by parsing the specific table."""
+import requests
+from bs4 import BeautifulSoup
+
+# HSI
+r = requests.get('https://en.wikipedia.org/wiki/Hang_Seng_Index',
+                 headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+soup = BeautifulSoup(r.text, 'html.parser')
+
+# Find the constituent table - look for tables with class wikitable
+tables = soup.find_all('table', class_='wikitable')
+print(f'Found {len(tables)} wikitables')
+
+for i, table in enumerate(tables):
+    rows = table.find_all('tr')
+    if len(rows) < 20:
+        continue
+    # Check headers
+    headers = [th.get_text(strip=True) for th in rows[0].find_all('th')]
+    header_text = ' '.join(headers)
+    print(f'\nTable {i}: {len(rows)} rows, headers: {header_text[:100]}')
+
+    # Check first data row
+    if len(rows) > 1:
+        first_row = [td.get_text(strip=True) for td in rows[1].find_all('td')]
+        print(f'  Row 1: {first_row[:5]}')
+
+    # Look for HK stock code pattern
+    codes_found = []
+    for row in rows[1:11]:
+        for td in row.find_all('td'):
+            text = td.get_text(strip=True)
+            if text.isdigit() and len(text) == 5 and text.startswith(('0','1','2','3','9')):
+                codes_found.append(text)
+    if codes_found:
+        print(f'  HK codes found: {codes_found[:10]}')

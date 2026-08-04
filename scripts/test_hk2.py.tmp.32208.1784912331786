@@ -1,0 +1,44 @@
+"""Test more approaches for HK constituents."""
+import akshare as ak
+import requests
+import json
+
+# 1. Try csindex for HSI (probably won't work - Chinese index only)
+print("=== CSIndex HSI ===")
+try:
+    df = ak.index_stock_cons_csindex(symbol='HSI')
+    print(f'csindex HSI: {df.shape}')
+except Exception as e:
+    print(f'csindex HSI: {e}')
+
+# 2. Try Sina HK constituent API directly
+print("\n=== Sina HSI Constituents ===")
+url = 'http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHKStockData'
+try:
+    r = requests.get(url, params={'page': 1, 'size': 5, 'node': 'hsci'}, timeout=10)
+    print(f'Status: {r.status_code}, text[:200]: {r.text[:200]}')
+except Exception as e:
+    print(f'Error: {e}')
+
+# 3. Try direct HSI list from hsi.com.hk or wikipedia
+print("\n=== Testing HSI constituent scrape ===")
+# HSI official constituent list: https://www.hsi.com.hk/eng/indexes/all-indexes/hsi
+# Try wikipedia which has a nice table
+url = 'https://en.wikipedia.org/wiki/Hang_Seng_Index'
+try:
+    r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+    print(f'Wikipedia status: {r.status_code}, length: {len(r.text)}')
+    # Quick check for constituent codes
+    if 'href="/wiki/' in r.text:
+        print('Has wiki links - can parse')
+except Exception as e:
+    print(f'Error: {e}')
+
+# 4. Try eastmoney HK constituent API
+print("\n=== Eastmoney HK ===")
+try:
+    # This might work for HK stock list
+    df = ak.stock_hk_spot_em()
+    print(f'HK spot: {df.shape}, cols: {list(df.columns[:5])}')
+except Exception as e:
+    print(f'Error: {e}')

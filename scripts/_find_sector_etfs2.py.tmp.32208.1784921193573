@@ -1,0 +1,59 @@
+"""Search for sector ETFs — use East Money API directly"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import requests
+import json
+
+# East Money ETF list
+url = "https://push2.eastmoney.com/api/qt/clist/get"
+params = {
+    "pn": "1", "pz": "5000",
+    "fs": "b:MK0255",  # ETF category
+    "fields": "f12,f14",
+    "np": "1", "fltt": "2"
+}
+
+try:
+    r = requests.get(url, params=params, timeout=15)
+    data = r.json()
+    all_etfs = {}
+    for item in data.get("data", {}).get("diff", []):
+        code = item.get("f12", "")
+        name = item.get("f14", "")
+        all_etfs[code] = name
+    print(f"拉取到 {len(all_etfs)} 只 ETF")
+except Exception as e:
+    print(f"拉取失败: {e}")
+    all_etfs = {}
+
+# Search keywords
+searches = {
+    "半导体设备材料": ["半导体设备", "半导体材料", "芯片设备", "芯片材料"],
+    "存储/光电子": ["存储", "光电子", "光子"],
+    "智能汽车": ["智能汽车", "智能驾驶", "汽车零部件", "车联网"],
+    "医疗器械": ["医疗器械", "医疗设备"],
+    "储能": ["储能"],
+    "新能源装备": ["新能源", "光伏", "风电"],
+    "碳纤维": ["碳纤维"],
+    "新材料": ["新材料", "材料"],
+    "机器人": ["机器人"],
+    "航空制造": ["军工", "国防", "航空航天"],
+    "大数据/云计算": ["大数据", "云计算", "云"],
+    "通信/5G": ["通信", "5G"],
+    "中药": ["中药"],
+    "医药": ["医药", "医疗", "生物医药"],
+}
+
+for category, keywords in searches.items():
+    matches = []
+    for code, name in all_etfs.items():
+        for kw in keywords:
+            if kw in name:
+                matches.append(f"{code} {name}")
+                break
+    if matches:
+        print(f"\n[{category}]:")
+        for m in matches[:5]:
+            print(f"  {m}")
+    else:
+        print(f"\n[{category}]: 未找到")

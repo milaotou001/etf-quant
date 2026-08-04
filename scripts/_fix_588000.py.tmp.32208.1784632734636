@@ -1,0 +1,14 @@
+import sys; sys.path.insert(0, '.')
+from purchase_plan import load_purchase_plan, save_purchase_plan, _new_item, PURCHASE_PLAN_PATH
+
+p = load_purchase_plan(str(PURCHASE_PLAN_PATH))
+a = p['assets']['588000']
+a['target'] = 10000.0
+a['plan_note'] = '暂停：半导体权重过高（50%+），待科技簇解冻后分三笔（20/30/50）执行。'
+a['items'] = [
+    _new_item('588000', 1, 2000.0),
+    _new_item('588000', 2, 3000.0),
+    _new_item('588000', 3, 5000.0),
+]
+save_purchase_plan(p)
+print('588000:', [(i['id'], i['planned_amount']) for i in a['items']])

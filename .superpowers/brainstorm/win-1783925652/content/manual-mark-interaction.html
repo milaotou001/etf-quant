@@ -1,0 +1,28 @@
+<h2>手动标记已买入</h2>
+<p class="subtitle">买完后直接在对应计划格点击；确认后才改变状态和暂估进度。</p>
+
+<div class="mockup">
+  <div class="mockup-header">计划表中的操作格</div>
+  <div class="mockup-body" style="padding:20px;background:#f8faf9">
+    <div style="display:grid;grid-template-columns:130px 170px 170px 170px;gap:8px;font-size:12px;align-items:stretch">
+      <div style="padding:9px;color:#667085">标的</div><div style="padding:9px;text-align:center;color:#667085">第1笔</div><div style="padding:9px;text-align:center;color:#667085">第2笔</div><div style="padding:9px;text-align:center;color:#667085">第3笔</div>
+      <div style="background:#e6f3ee;border-left:6px solid #1f8a70;border-radius:8px;padding:12px"><b style="color:#14634f">A500</b><br><small>计划每笔约¥3,750</small></div>
+      <div style="background:#f3fbf8;border:1px solid #c5e6dc;border-radius:8px;padding:10px;text-align:center"><div style="margin-bottom:7px">计划 ¥3,750</div><button style="background:#1f8067;color:white;border:0;border-radius:5px;padding:6px 10px;font-size:11px">标记已买</button></div>
+      <div style="background:#fff9e9;border:1px solid #e8ce8b;border-radius:8px;padding:10px;text-align:center"><b style="color:#8a6200">✓ 已买入·待对账</b><br><small>确认日：2026-07-13</small><br><small>暂估 ¥3,750</small></div>
+      <div style="background:#f3fbf8;border:1px solid #c5e6dc;border-radius:8px;padding:10px;text-align:center"><div style="margin-bottom:7px">计划 ¥3,750</div><button style="background:#1f8067;color:white;border:0;border-radius:5px;padding:6px 10px;font-size:11px">标记已买</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">点击后的确认框</div>
+  <div class="mockup-body" style="padding:22px;background:#eef2f0">
+    <div style="max-width:390px;margin:auto;background:white;border:1px solid #dce7e2;border-radius:10px;padding:22px;box-shadow:0 8px 28px rgba(16,40,31,.12)">
+      <h3 style="margin:0 0 6px">确认标记为已买入？</h3><p style="font-size:12px;color:#667085;margin:0 0 16px">这只会记录你的手动确认，不会伪造实际成交详情。</p>
+      <div style="background:#f5f8f6;border-radius:7px;padding:12px;font-size:13px;line-height:1.8"><b>A500 · 第1笔</b><br>计划金额：¥3,750<br>确认日期：2026-07-13<br>状态：已买入·待对账</div>
+      <div style="display:flex;gap:9px;margin-top:16px;justify-content:flex-end"><button style="border:1px solid #cfd8d4;background:white;border-radius:6px;padding:8px 13px">取消</button><button style="border:0;background:#1f8067;color:white;border-radius:6px;padding:8px 13px">确认已买</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:18px"><div class="option" data-choice="approve-manual-mark" onclick="toggleSelect(this)"><div class="letter">✓</div><div class="content"><h3>这个交互正确</h3><p>买完点击，确认后进入待对账。</p></div></div><div class="option" data-choice="revise-manual-mark" onclick="toggleSelect(this)"><div class="letter">↻</div><div class="content"><h3>还要调整</h3><p>告诉我按钮或确认框需要改变的地方。</p></div></div></div>

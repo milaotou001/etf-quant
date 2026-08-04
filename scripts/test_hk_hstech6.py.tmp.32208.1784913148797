@@ -1,0 +1,33 @@
+"""Parse HSTECH constituent table from Chinese Wikipedia."""
+import requests
+import pandas as pd
+from io import StringIO
+import re
+
+# Try simplified Chinese Wikipedia
+url = 'https://zh.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+
+# pd.read_html can parse HTML directly with BeautifulSoup
+tables = pd.read_html(StringIO(r.text))
+print(f'Found {len(tables)} tables')
+
+for i, t in enumerate(tables):
+    print(f'\nTable {i}: {t.shape}')
+    # Print column names
+    cols = [str(c)[:30] for c in t.columns]
+    print(f'  Cols: {cols}')
+    # Check for stock code patterns
+    for col in t.columns:
+        sample = t[col].dropna().astype(str).head(5).tolist()
+        # Check if sample values look like stock codes (5 digits, or 4-5 digits starting with 0)
+        for v in sample:
+            clean = re.sub(r'\D', '', v)
+            if clean.isdigit() and len(clean) in (4, 5):
+                print(f'  Col "{str(col)[:30]}": sample codes = {sample}')
+                # Print all codes
+                all_vals = t[col].dropna().astype(str).tolist()
+                codes = [re.sub(r'\D', '', v) for v in all_vals]
+                codes = [c.zfill(5) for c in codes if c.isdigit() and len(c) in (4, 5)]
+                print(f'  ALL CODES ({len(codes)}): {codes}')
+                break

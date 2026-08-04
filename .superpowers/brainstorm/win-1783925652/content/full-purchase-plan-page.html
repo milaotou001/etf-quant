@@ -1,0 +1,52 @@
+<div style="display:flex;min-height:760px;background:#f6f8f7;color:#25332d;font-family:system-ui,-apple-system,'Segoe UI',sans-serif">
+  <aside style="width:210px;background:#173b32;color:#eaf5f0;padding:24px 16px;box-sizing:border-box">
+    <div style="font-size:18px;font-weight:700;margin-bottom:28px">ETF 决策辅助</div>
+    <div style="font-size:12px;color:#a8c8bc;margin-bottom:9px">页面</div>
+    <div style="padding:10px 12px;border-radius:7px;margin-bottom:5px;color:#c4dcd3">状态与图表</div>
+    <div style="padding:10px 12px;border-radius:7px;background:#2b6555;margin-bottom:5px;font-weight:700">半年买入计划</div>
+    <div style="padding:10px 12px;border-radius:7px;margin-bottom:5px;color:#c4dcd3">复盘日志</div>
+    <div style="padding:10px 12px;border-radius:7px;margin-bottom:5px;color:#c4dcd3">策略回测</div>
+    <div style="padding:10px 12px;border-radius:7px;color:#c4dcd3">策略规则</div>
+    <div style="border-top:1px solid #3d675b;margin-top:30px;padding-top:18px;font-size:12px;color:#a8c8bc;line-height:1.6">交割单<br><span style="color:#eaf5f0">已保存解析记录</span><br><span style="color:#a8c8bc">上传新文件后自动对账</span></div>
+  </aside>
+  <main style="flex:1;padding:28px 34px;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div><div style="font-size:12px;color:#718079;margin-bottom:7px">计划管理 / 半年执行</div><h1 style="font-size:28px;margin:0 0 7px;letter-spacing:-.03em">半年买入计划</h1><div style="font-size:13px;color:#66756e">计划基数 ¥285,000 · 实时市值只用于观察，不自动改计划</div></div>
+      <button style="background:#1f8067;border:0;color:white;padding:10px 15px;border-radius:7px;font-size:13px">刷新行情</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:white;border:1px solid #dce7e2;border-radius:10px;padding:15px"><div style="font-size:12px;color:#718079">半年计划总额</div><div style="font-size:22px;font-weight:700;margin-top:6px">¥90,315</div><div style="font-size:11px;color:#718079;margin-top:4px">黄金＋宽基＋科创</div></div>
+      <div style="background:white;border:1px solid #dce7e2;border-radius:10px;padding:15px"><div style="font-size:12px;color:#718079">已确认</div><div style="font-size:22px;font-weight:700;color:#1f8067;margin-top:6px">¥2,500</div><div style="font-size:11px;color:#718079;margin-top:4px">待对账：1笔</div></div>
+      <div style="background:white;border:1px solid #dce7e2;border-radius:10px;padding:15px"><div style="font-size:12px;color:#718079">计划剩余</div><div style="font-size:22px;font-weight:700;margin-top:6px">¥87,815</div><div style="font-size:11px;color:#718079;margin-top:4px">不含实时缺口调整</div></div>
+      <div style="background:white;border:1px solid #dce7e2;border-radius:10px;padding:15px"><div style="font-size:12px;color:#718079">对账状态</div><div style="font-size:18px;font-weight:700;margin-top:8px">1笔待核对</div><div style="font-size:11px;color:#aa6b00;margin-top:4px">上传交割单自动补全</div></div>
+    </div>
+
+    <section style="background:white;border:1px solid #dce7e2;border-radius:10px;margin-bottom:18px;overflow:hidden">
+      <div style="padding:17px 18px;border-bottom:1px solid #e8efec;display:flex;justify-content:space-between;align-items:center"><div><h2 style="font-size:17px;margin:0 0 4px">计划与实际成交</h2><div style="font-size:12px;color:#718079">每个格子是一笔计划；成交信息叠加在原格子里</div></div><div style="font-size:11px;color:#718079">□ 计划中　<span style="color:#aa6b00">✓ 待对账</span>　<span style="color:#1f8067">✓ 已对账</span></div></div>
+      <div style="padding:14px 18px;overflow-x:auto">
+        <table style="border-collapse:separate;border-spacing:5px;min-width:920px;width:100%;font-size:11px">
+          <thead><tr><th style="text-align:left;width:150px">标的 / 理想仓位</th><th>第1笔</th><th>第2笔</th><th>第3笔</th><th>第4笔</th><th>第5笔</th><th>第6笔</th><th>后续</th></tr></thead>
+          <tbody>
+            <tr><th style="background:#e6f3ee;border-left:6px solid #1f8a70;border-radius:7px;padding:10px;text-align:left;color:#14634f">A500<br><span style="font-weight:400">宽基 · 20%</span></th><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f3fbf8;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="color:#98a2b3;text-align:center">—</td></tr>
+            <tr><th style="background:#eaf1fb;border-left:6px solid #3c78c8;border-radius:7px;padding:10px;text-align:left;color:#285995">沪深300<br><span style="font-weight:400">宽基 · 20%</span></th><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="background:#f4f8fe;border-radius:7px;padding:10px;text-align:center">□ ¥3,750</td><td style="color:#98a2b3;text-align:center">—</td></tr>
+            <tr><th style="background:#fff5df;border-left:6px solid #c58a22;border-radius:7px;padding:10px;text-align:left;color:#8a5e0b">黄金<br><span style="font-weight:400">20% · 每周</span></th><td style="background:#fff0c9;border-radius:7px;padding:9px;text-align:center"><b>✓ 07-10</b><br>待对账</td><td style="background:#fffaf0;border-radius:7px;padding:10px;text-align:center">□ ¥2,500</td><td style="background:#fffaf0;border-radius:7px;padding:10px;text-align:center">□ ¥2,500</td><td style="background:#fffaf0;border-radius:7px;padding:10px;text-align:center">□ ¥2,500</td><td style="background:#fffaf0;border-radius:7px;padding:10px;text-align:center">□ ¥2,500</td><td style="background:#fffaf0;border-radius:7px;padding:10px;text-align:center">□ ¥2,500</td><td style="color:#98a2b3;text-align:center">第7–12笔</td></tr>
+            <tr><th style="background:#f0ebfb;border-left:6px solid #7756b5;border-radius:7px;padding:10px;text-align:left;color:#563995">科创50<br><span style="font-weight:400">10%</span></th><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="background:#faf8fe;border-radius:7px;padding:10px;text-align:center">□ ¥2,552.5</td><td style="color:#98a2b3;text-align:center">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="background:white;border:1px solid #dce7e2;border-radius:10px;padding:18px;margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><h2 style="font-size:17px;margin:0 0 4px">实时仓位进度</h2><div style="font-size:12px;color:#718079">每条长度固定为该标的理想金额；实时缺口只观察</div></div><span style="font-size:11px;color:#718079">数据日：最近行情</span></div>
+      <div style="display:grid;gap:13px;font-size:12px">
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><b style="color:#14634f">A500 · 理想20%（¥57,000）</b><span>已拥有：交割单×实时价　缺口：实时计算</span></div><div style="height:17px;border-radius:9px;background:#e6f3ee;overflow:hidden"><div style="width:64.4%;height:100%;background:#1f8a70"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><b style="color:#285995">沪深300 · 理想20%（¥57,000）</b><span>已拥有：交割单×实时价　缺口：实时计算</span></div><div style="height:17px;border-radius:9px;background:#eaf1fb;overflow:hidden"><div style="width:56.6%;height:100%;background:#3c78c8"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><b style="color:#8a5e0b">黄金 · 理想20%（¥57,000）</b><span>已拥有：上传交割单后计算</span></div><div style="height:17px;border-radius:9px;background:#fff5df;overflow:hidden"><div style="width:78%;height:100%;background:#c58a22"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><b style="color:#563995">科创50 · 理想10%（¥28,500）</b><span>已拥有：交割单×实时价　缺口：实时计算</span></div><div style="height:17px;border-radius:9px;background:#f0ebfb;overflow:hidden"><div style="width:46.3%;height:100%;background:#7756b5"></div></div></div>
+      </div>
+      <div style="margin-top:15px;background:#f3f5f6;border-radius:8px;padding:12px;display:flex;justify-content:space-between;font-size:12px"><b>现金 / 其他 · 理想30%（¥85,500）</b><span>当前余额：最近对账单资金余额（待读取）</span></div>
+    </section>
+    <div style="font-size:11px;color:#718079">提示：手动勾选后先显示“已买入·待对账”；上传交割单后自动补全日期、数量、实际金额。存在歧义的成交进入待确认，不会静默归类。</div>
+  </main>
+</div>

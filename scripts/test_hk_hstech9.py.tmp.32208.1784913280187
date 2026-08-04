@@ -1,0 +1,43 @@
+"""Extract current constituents from zh-yue Wikipedia using Investing.com as backup."""
+import requests
+from bs4 import BeautifulSoup
+import re
+
+# Try zh-yue Wikipedia (Cantonese) which had 32 codes
+url = 'https://zh-yue.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+soup = BeautifulSoup(r.text, 'html.parser')
+
+# Find all tables and look for the biggest one
+tables = soup.find_all('table', class_='wikitable')
+for i, t in enumerate(tables):
+    rows = t.find_all('tr')
+    if len(rows) < 20:
+        continue
+    # Check heading
+    prev = t.find_previous(['h2', 'h3'])
+    heading = prev.get_text(strip=True) if prev else 'N/A'
+    # Extract ALL 0-prefixed numbers from this table
+    text = t.get_text()
+    codes = sorted(set(re.findall(r'\b(0\d{3,4})\b', text)))
+    codes = [c.zfill(5) for c in codes]
+    print(f'Table {i}: {len(rows)} rows, heading="{heading[:80]}", codes={len(codes)}')
+    if 25 <= len(codes) <= 35:
+        print(f'  {codes}')
+
+# Also try Investing.com for HSTECH
+print('\n=== Investing.com HSTECH ===')
+url2 = 'https://www.investing.com/indices/hang-seng-tech-components'
+r2 = requests.get(url2, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+# Find all stock codes in the page
+codes2 = sorted(set(re.findall(r'\b(\d{5})\b', r2.text)))
+hk_starts = [c for c in codes2 if c.startswith('0')]
+print(f'HK-style codes: {len(hk_starts)}')
+if hk_starts:
+    print(f'Sample: {hk_starts[:20]}')
+# Also try to find in links
+href_codes = set(re.findall(r'/equities/(\d+)', r2.text))
+hk_href = sorted(c.zfill(5) for c in href_codes if c.startswith('0'))
+print(f'Href HK codes: {len(hk_href)}')
+if hk_href:
+    print(f'Sample: {hk_href[:20]}')

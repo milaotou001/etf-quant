@@ -1,0 +1,46 @@
+"""检查所有产业 ETF 的历史价格是否有拆分/异常跳变"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pandas as pd
+import numpy as np
+
+ETFS = [
+    ("561380", "电网设备"), ("159663", "机床"), ("516150", "稀土"),
+    ("560860", "工业有色"), ("512400", "有色金属"), ("159995", "芯片"),
+    ("159819", "AI算力"), ("159755", "动力电池"), ("512630", "卫星互联网"),
+    ("159570", "创新药"), ("562500", "机器人"), ("159665", "半导体设备"),
+    ("515250", "智能汽车"), ("516090", "储能"), ("159883", "医疗器械"),
+]
+
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+print("检查日收益异常（|单日| > 20% 标记为疑似拆分）:\n")
+
+for code, name in ETFS:
+    path = os.path.join(CACHE, f"{code}.csv")
+    if not os.path.exists(path):
+        print(f"{code} {name}: 无缓存")
+        continue
+
+    df = pd.read_csv(path)
+    date_col = "date" if "date" in df.columns else "日期"
+    close_col = "close" if "close" in df.columns else "收盘"
+
+    if date_col not in df.columns or close_col not in df.columns:
+        print(f"{code} {name}: 列名异常 {df.columns.tolist()[:5]}")
+        continue
+
+    df[date_col] = pd.to_datetime(df[date_col])
+    df = df.sort_values(date_col)
+    df["ret"] = df[close_col].pct_change()
+
+    jumps = df[df["ret"].abs() > 0.20]
+    if not jumps.empty:
+        for _, row in jumps.iterrows():
+            prev_idx = df.index.get_loc(row.name) - 1
+            if prev_idx >= 0:
+                prev_row = df.iloc[prev_idx]
+                ratio = row[close_col] / prev_row[close_col]
+                print(f"  {code} {name}: {row[date_col].date()} {prev_row[close_col]:.3f}->{row[close_col]:.3f} ({ratio:.3f}x, {row['ret']*100:+.1f}%)")
+    else:
+        print(f"  {code} {name}: OK (无异常跳变)")

@@ -1,0 +1,35 @@
+"""检查所有 ETF 的 OHLC 数据有没有异常"""
+import pandas as pd, os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from dashboard import _RS_BENCHMARK
+
+cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+for sym in sorted(set(list(_RS_BENCHMARK.keys()))):
+    path = os.path.join(cache_dir, f"{sym}.csv")
+    if not os.path.exists(path):
+        continue
+    df = pd.read_csv(path)
+    date_col = "date" if "date" in df.columns else "日期"
+    df[date_col] = pd.to_datetime(df[date_col])
+
+    issues = []
+    # high < low
+    bad_hl = (df["high"] < df["low"]).sum()
+    if bad_hl: issues.append(f"high<low: {bad_hl}")
+    # open < low or open > high
+    bad_open = ((df["open"] < df["low"]) | (df["open"] > df["high"])).sum()
+    if bad_open: issues.append(f"open out of range: {bad_open}")
+    # close < low or close > high
+    bad_close = ((df["close"] < df["low"]) | (df["close"] > df["high"])).sum()
+    if bad_close: issues.append(f"close out of range: {bad_close}")
+    # zero volume
+    if "volume" in df.columns:
+        zero_vol = (df["volume"] == 0).sum()
+        if zero_vol: issues.append(f"zero volume: {zero_vol}")
+    # duplicate dates
+    dup_dates = df[date_col].duplicated().sum()
+    if dup_dates: issues.append(f"dup dates: {dup_dates}")
+
+    status = "; ".join(issues) if issues else "OK"
+    print(f"{sym}: {status}")

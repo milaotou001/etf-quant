@@ -1,0 +1,67 @@
+"""回填产业 ETF 历史价格 — 使用腾讯源"""
+import sys, os, time, random
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import akshare as ak
+import pandas as pd
+from datetime import datetime
+
+ETFS = [
+    ("515250", "智能汽车ETF"),
+    ("159665", "半导体设备ETF"),
+    ("159883", "医疗器械ETF"),
+    ("516090", "储能ETF"),
+    ("562500", "机器人ETF"),
+]
+
+START = "20240101"
+END = datetime.now().strftime("%Y%m%d")
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+for code, name in ETFS:
+    path = os.path.join(CACHE, f"{code}.csv")
+    if os.path.exists(path):
+        df_old = pd.read_csv(path)
+        if len(df_old) >= 200:
+            print(f"{code} {name}: 已有 {len(df_old)} 天，跳过")
+            continue
+
+    market = "sh" if code.startswith(("5", "6", "9")) else "sz"
+    symbol = f"{market}{code}"
+    print(f"{code} {name} ({symbol}): 拉取中...", end=" ", flush=True)
+
+    success = False
+    for attempt in range(3):
+        try:
+            df = ak.fund_etf_hist_sina(symbol=symbol)
+            if df is not None and not df.empty:
+                df = df.reset_index()
+                df.columns = [c.lower() for c in df.columns]
+                rename = {"open": "open", "high": "high", "low": "low", "close": "close", "volume": "volume"}
+                df = df.rename(columns=rename)
+                df.to_csv(path, index=False)
+                print(f"{len(df)} 天 OK (sina)")
+                success = True
+                break
+        except Exception:
+            pass
+        time.sleep(random.uniform(0.5, 1.0))
+
+    if not success:
+        # Try Tencent source
+        for attempt in range(3):
+            try:
+                df = ak.stock_zh_a_hist_tx(symbol=symbol, start_date=START, end_date=END)
+                if df is not None and not df.empty and "close" in df.columns:
+                    df.to_csv(path, index=False)
+                    print(f"{len(df)} 天 OK (tx)")
+                    success = True
+                    break
+            except Exception:
+                pass
+            time.sleep(random.uniform(1.0, 2.0))
+
+    if not success:
+        print("失败")
+    time.sleep(0.5)
+
+print("完成")

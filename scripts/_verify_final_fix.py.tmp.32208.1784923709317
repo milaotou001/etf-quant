@@ -1,0 +1,39 @@
+"""验证拆分修复：通过 data.load_data 加载，检查拆分处是否连续"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data import load_data
+import pandas as pd
+
+checks = {
+    "561380": "2026-06-25",
+    "159663": "2026-07-07",
+    "159995": "2026-07-07",
+    "516090": "2021-11-29",
+}
+
+for sym, split_date in checks.items():
+    df = load_data(sym, force_refresh=False)
+    if df is None or df.empty:
+        print(f"{sym}: 加载失败")
+        continue
+
+    split_dt = pd.Timestamp(split_date)
+
+    # Find before/after records
+    before = df[df.index < split_dt]
+    after = df[df.index >= split_dt]
+
+    if len(before) == 0 or len(after) == 0:
+        print(f"{sym}: 拆分前后数据不完整")
+        continue
+
+    pre = before.iloc[-1]
+    post = after.iloc[0]
+
+    print(f"\n=== {sym} ===")
+    print(f"  拆分前 ({pre.name.strftime('%Y-%m-%d')}): C={pre['close']:.4f}")
+    print(f"  拆分后 ({post.name.strftime('%Y-%m-%d')}): C={post['close']:.4f}")
+    ratio = post['close'] / pre['close']
+    print(f"  跳变比例: {ratio:.4f} (理想 ~1.0)")
+    status = "OK" if 0.95 < ratio < 1.05 else "BROKEN!"
+    print(f"  Status: {status}")

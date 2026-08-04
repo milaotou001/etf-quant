@@ -1,0 +1,30 @@
+"""Check Sina HSI HTML structure + try JSON API with different node."""
+import requests
+import re
+
+# Check Sina HSI component page HTML
+url = 'https://vip.stock.finance.sina.com.cn/corp/go.php/vII_NewestComponent/indexid/HSI.phtml'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+# Find table rows with stock codes
+# Look for patterns like /quotes_service/.../hk01088 or similar
+patterns = re.findall(r'hk(\d{4,5})', r.text)
+print(f'Found {len(patterns)} HK codes in HSI page')
+print(f'Sample: {sorted(set(patterns))[:20]}')
+
+# Also look for href patterns
+hrefs = re.findall(r'href="([^"]*hk[^"]*\d{4,5}[^"]*)"', r.text)
+print(f'\nHK hrefs: {len(hrefs)}')
+for h in hrefs[:10]:
+    print(f'  {h}')
+
+# Try Sina JSON API with different node values
+print("\n=== HK JSON API ===")
+nodes = ['hksi', 'hsil', 'hs_100', 'hsi', 'hang_seng', 'zhishu_hsi']
+for node in nodes:
+    api_url = f'http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHKStockData?page=1&size=3&sort=symbol&asc=1&node={node}'
+    r2 = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+    result = r2.text[:200]
+    if len(result) > 5 and result != '[]' and result != 'null':
+        print(f'node={node}: {result[:150]}')
+    else:
+        print(f'node={node}: empty')

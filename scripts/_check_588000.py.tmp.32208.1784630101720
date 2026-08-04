@@ -1,0 +1,14 @@
+import sys; sys.path.insert(0, '.')
+from data import load_data
+df = load_data('588000')
+c = df.close
+chg = (c/c.shift(1)-1)*100
+big = chg[chg > 8]
+print('588000 科创板50 历史单日涨幅 >8% 及后续走势:')
+print()
+for i in big.index:
+    idx = list(df.index).index(i)
+    nxt = f"{(c.iloc[idx+1]/c.iloc[idx]-1)*100:+.1f}%" if idx+1 < len(c) else 'N/A'
+    d5 = f"{(c.iloc[min(idx+5,len(c)-1)]/c.iloc[idx]-1)*100:+.1f}%" if idx+5 < len(c) else 'N/A'
+    d10 = f"{(c.iloc[min(idx+10,len(c)-1)]/c.iloc[idx]-1)*100:+.1f}%" if idx+10 < len(c) else 'N/A'
+    print(f'{i.strftime("%Y-%m-%d")}: +{chg[i]:.1f}%  次日{nxt}  5日后{d5}  10日后{d10}')

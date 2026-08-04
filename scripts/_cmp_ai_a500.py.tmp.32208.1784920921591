@@ -1,0 +1,44 @@
+"""Quick comparison: 159819 vs A500"""
+import pandas as pd
+import numpy as np
+
+a500 = pd.read_csv('cache/563360.csv', parse_dates=['date'], index_col='date')['close'].sort_index()
+ai = pd.read_csv('cache/159819.csv', parse_dates=['date'], index_col='date')['close'].sort_index()
+hs300 = pd.read_csv('cache/510300.csv', parse_dates=['date'], index_col='date')['close'].sort_index()
+
+common = a500.index.intersection(ai.index).intersection(hs300.index)
+a500_a = a500[common].sort_index()
+ai_a = ai[common].sort_index()
+hs300_a = hs300[common].sort_index()
+
+# Correlation
+ret_a500 = a500_a.pct_change().dropna()
+ret_ai = ai_a.pct_change().dropna()
+cr = ret_a500.index.intersection(ret_ai.index)
+corr = ret_a500[cr].corr(ret_ai[cr])
+
+print(f"数据: {len(common)} 天, {common[0].date()} ~ {common[-1].date()}")
+print(f"日收益率相关系数: {corr:.4f}")
+
+# Recent 60d
+a60 = a500_a.iloc[-60:]
+i60 = ai_a.iloc[-60:]
+a60_ret = (a60.iloc[-1] / a60.iloc[0] - 1) * 100
+i60_ret = (i60.iloc[-1] / i60.iloc[0] - 1) * 100
+print(f"\n近60日涨跌:")
+print(f"  A500:    {a60.iloc[0]:.3f} -> {a60.iloc[-1]:.3f}  ({a60_ret:+.1f}%)")
+print(f"  159819:  {i60.iloc[0]:.3f} -> {i60.iloc[-1]:.3f}  ({i60_ret:+.1f}%)")
+
+# RS vs 沪深300
+a500_rs = (a500_a / hs300_a) * 100
+ai_rs = (ai_a / hs300_a) * 100
+a500_rs60 = (a500_rs.iloc[-1] / a500_rs.iloc[-61] - 1) * 100
+ai_rs60 = (ai_rs.iloc[-1] / ai_rs.iloc[-61] - 1) * 100
+print(f"\nRS vs 沪深300:")
+print(f"  A500:    {a500_rs.iloc[-1]:.1f}  (60d {a500_rs60:+.1f}%)")
+print(f"  159819:  {ai_rs.iloc[-1]:.1f}  (60d {ai_rs60:+.1f}%)")
+
+# A500 成分里面科技/AI 权重有多少
+print(f"\n结论: 两者日收益相关系数 {corr:.3f}，A500 作为宽基指数覆盖了 500 只大盘股，")
+print(f"其中科技/AI 相关成分股权重不低（芯片、AI硬件、互联网平台都在前十大）。")
+print(f"沪深300 自身也与 A500 高度重叠，所以两只 ETF 走势接近是正常的。")

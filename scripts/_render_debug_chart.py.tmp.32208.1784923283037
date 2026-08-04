@@ -1,0 +1,35 @@
+"""生成电网设备 561380 的图表查看效果"""
+import pandas as pd, os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import matplotlib
+matplotlib.use("Agg")
+from dashboard import compute_indicators, _load_benchmark_prices
+from chart import build_figure, resolve_chart_start
+import matplotlib.pyplot as plt
+
+OUTPUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
+
+# Load 561380 data
+df = _load_benchmark_prices("561380")
+if df is None:
+    print("561380: no data")
+    sys.exit(1)
+
+df = compute_indicators(df)
+print(f"561380: {len(df)} rows, columns={list(df.columns)}")
+print(f"Date range: {df.index[0]} ~ {df.index[-1]}")
+print(f"Has ma150: {'ma150' in df.columns}")
+if "ma150" in df.columns:
+    print(f"MA150 last 5: {df['ma150'].tail(5).tolist()}")
+print(f"Has rsi: {'rsi' in df.columns}")
+print(f"Close range: {df['close'].min():.4f} ~ {df['close'].max():.4f}")
+
+# Generate chart
+start = resolve_chart_start(df.index, "近 6 个月")
+fig = build_figure(df, symbol="561380", name="电网设备", start_date=start, end_date=df.index[-1])
+
+os.makedirs(OUTPUT, exist_ok=True)
+path = os.path.join(OUTPUT, "debug_561380.png")
+fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
+plt.close(fig)
+print(f"Chart saved: {path}")

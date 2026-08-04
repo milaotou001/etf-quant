@@ -1,0 +1,91 @@
+<h2>修正版：计划与成交叠加在同一张表</h2>
+<p class="subtitle">每个格子就是一笔计划。真实成交到来后，不新增第二张表，而是在原格子里叠加成交信息。</p>
+
+<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:12px">
+  <span style="padding:7px 10px;border:1px solid #d9e3df;border-radius:7px;background:white">□ 计划中：只显示计划金额</span>
+  <span style="padding:7px 10px;border:1px solid #e8ce8b;border-radius:7px;background:#fff9e9">✓ 已买入·待对账：暂估金额</span>
+  <span style="padding:7px 10px;border:1px solid #83c5a7;border-radius:7px;background:#e8f6ef">✓ 已对账：日期＋数量＋实际金额</span>
+  <span style="padding:7px 10px;border:1px solid #e0a4a4;border-radius:7px;background:#fff1f1">? 有歧义：等待人工确认</span>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">半年买入计划与实际成交</div>
+  <div class="mockup-body" style="padding:14px;background:#f7faf8;overflow-x:auto">
+    <table style="border-collapse:separate;border-spacing:7px;min-width:1500px;width:100%;font-size:12px">
+      <thead><tr>
+        <th style="position:sticky;left:0;background:#f7faf8;text-align:left;min-width:125px">标的</th>
+        <th>第1笔</th><th>第2笔</th><th>第3笔</th><th>第4笔</th><th>第5笔</th><th>第6笔</th>
+        <th>第7笔</th><th>第8笔</th><th>第9笔</th><th>第10笔</th><th>第11笔</th><th>第12笔</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <th style="position:sticky;left:0;background:white;text-align:left;border-radius:8px;padding:10px"><b>黄金</b><br><span style="color:#667085">12笔 × ¥2,500</span></th>
+          <td style="background:#fff9e9;border:1px solid #e8ce8b;border-radius:8px;padding:9px;min-width:112px"><b style="color:#8a6200">✓ 07-10已买</b><br><small>计划 ¥2,500</small><hr style="border:0;border-top:1px solid #ead9aa"><span>数量：待对账</span><br><span>实际金额：待对账</span></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>07-17</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>07-24</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>07-31</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>08-07</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>08-14</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>08-21</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>08-28</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>09-04</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>09-11</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>09-18</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,500</b><br><small>09-25</small></td>
+        </tr>
+        <tr>
+          <th style="position:sticky;left:0;background:white;text-align:left;border-radius:8px;padding:10px"><b>A500</b><br><span style="color:#667085">6笔 × ¥3,750</span></th>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td colspan="6" style="background:#eef1f0;color:#98a2b3;text-align:center;border-radius:8px">本标的共6笔</td>
+        </tr>
+        <tr>
+          <th style="position:sticky;left:0;background:white;text-align:left;border-radius:8px;padding:10px"><b>沪深300</b><br><span style="color:#667085">6笔 × ¥3,750</span></th>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥3,750</b><br><small>第2轮</small></td>
+          <td colspan="6" style="background:#eef1f0;color:#98a2b3;text-align:center;border-radius:8px">本标的共6笔</td>
+        </tr>
+        <tr>
+          <th style="position:sticky;left:0;background:white;text-align:left;border-radius:8px;padding:10px"><b>科创50</b><br><span style="color:#667085">6笔 × ¥2,552.50</span></th>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第1轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第2轮</small></td>
+          <td style="background:white;border:1px solid #d9e3df;border-radius:8px;padding:9px;text-align:center">□<br><b>¥2,552.50</b><br><small>第2轮</small></td>
+          <td colspan="6" style="background:#eef1f0;color:#98a2b3;text-align:center;border-radius:8px">本标的共6笔</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">账户配置总进度 · 固定规划基数 ¥285,000</div>
+  <div class="mockup-body" style="padding:20px;background:white">
+    <div style="display:flex;height:56px;border-radius:10px;overflow:hidden;border:1px solid #cfd8d4">
+      <div style="width:40%;background:#e5f0ec;position:relative;border-right:2px solid white"><div style="width:60.4%;height:100%;background:#277c68"></div><span style="position:absolute;left:9px;top:8px;color:white;font-size:11px"><b>宽基 40%</b><br>实时 ¥68,837</span></div>
+      <div style="width:10%;background:#eeeafd;position:relative;border-right:2px solid white"><div style="width:46.3%;height:100%;background:#7866b8"></div><span style="position:absolute;left:6px;top:8px;font-size:10px"><b>科创 10%</b><br>¥13,185</span></div>
+      <div style="width:20%;background:repeating-linear-gradient(135deg,#fff5d8,#fff5d8 8px,#f9ebbd 8px,#f9ebbd 16px);position:relative;border-right:2px solid white"><span style="position:absolute;left:8px;top:8px;font-size:11px"><b>黄金 20%</b><br>交割单后实时计算</span></div>
+      <div style="width:30%;background:#edf0f2;position:relative"><span style="position:absolute;left:8px;top:8px;font-size:11px"><b>现金/其他 30%</b><br>理想 ¥85,500</span></div>
+    </div>
+    <p style="margin:12px 0 0;color:#667085;font-size:12px">深色＝实时持仓市值，浅色＝目标内缺口；仅观察，不自动修改上方计划。</p>
+  </div>
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="approve-overlay-layout" onclick="toggleSelect(this)">
+    <div class="letter">✓</div><div class="content"><h3>这次理解正确</h3><p>一张表完成计划、勾选和真实成交叠加。</p></div>
+  </div>
+  <div class="option" data-choice="revise-overlay-layout" onclick="toggleSelect(this)">
+    <div class="letter">↻</div><div class="content"><h3>仍需调整</h3><p>在对话里指出还不对的地方。</p></div>
+  </div>
+</div>

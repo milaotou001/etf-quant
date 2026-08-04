@@ -4,6 +4,7 @@ import numpy as np
 from indicators import sma, rsi, macd, bbands, adx
 from instruments import InstrumentSpec, get_instrument
 from etf_shares import SHARE_OBSERVATION_ENABLED
+import config
 
 RSI_THRESHOLDS = {"563360": 35, "510300": 35, "518880": 30, "588000": 25, "513180": 30, "159920": 30}
 
@@ -19,9 +20,12 @@ def compute_indicators(df: pd.DataFrame, instrument: InstrumentSpec | None = Non
     df = df[base_cols].copy()
     df.attrs.update(attrs)
     df["ma5"] = sma(df["close"], 5)
+    df["ma8"] = sma(df["close"], 8)
     df["ma10"] = sma(df["close"], 10)
     df["ma20"] = sma(df["close"], 20)
+    df["ma21"] = sma(df["close"], 21)
     df["ma60"] = sma(df["close"], 60)
+    df["ma150"] = sma(df["close"], 150)
     df["rsi"] = rsi(df["close"], 14)
 
     macd_df = macd(df["close"])
@@ -33,25 +37,27 @@ def compute_indicators(df: pd.DataFrame, instrument: InstrumentSpec | None = Non
     adx_df = adx(df["high"], df["low"], df["close"])
     df = pd.concat([df, adx_df], axis=1)
 
-    amount_verified = bool(attrs.get("amount_verified", "amount" in df.columns))
-    has_verified_amount = (
+    has_amount = (
         "amount" in df.columns
         and not df["amount"].dropna().empty
-        and amount_verified
     )
-    if has_verified_amount:
+    if has_amount:
         df["amount_ma20"] = sma(df["amount"], 20)
         df["rvol"] = df["amount"] / df["amount_ma20"].replace(0, np.nan)
         df.attrs.update(attrs)
         df.attrs["rvol_available"] = True
-        df.attrs["rvol_type"] = "成交额RVOL"
+        amount_verified = bool(attrs.get("amount_verified", False))
+        if amount_verified:
+            df.attrs["rvol_type"] = "成交额RVOL"
+        else:
+            df.attrs["rvol_type"] = "成交额RVOL（估算）"
     else:
         df["amount_ma20"] = np.nan
         df["rvol"] = np.nan
         df.attrs.update(attrs)
         df.attrs["rvol_available"] = False
         df.attrs["rvol_type"] = "暂不可用"
-        df.attrs["rvol_missing_reason"] = "缺少可验证的成交额数据"
+        df.attrs["rvol_missing_reason"] = "缺少成交额数据"
     df["chg"] = df["close"].pct_change() * 100
 
     return df
@@ -630,6 +636,475 @@ def build_campaign_observation(df: pd.DataFrame, instrument: InstrumentSpec) -> 
         "conditions": conditions,
         "right_confirmation": right_confirmation,
     }
+
+
+# ── 市场状态判断 ──
+
+_STATE_CODES = {
+    "bull": "BULL",
+    "bullish_range": "BULLISH_RANGE",
+    "range": "RANGE",
+    "bearish_range": "BEARISH_RANGE",
+    "bear": "BEAR",
+    "unknown": "INSUFFICIENT_DATA",
+}
+
+_STATE_NAMES = {
+    "bull": "多头市场",
+    "bullish_range": "偏多震荡",
+    "range": "震荡市场",
+    "bearish_range": "偏空震荡",
+    "bear": "空头市场",
+    "unknown": "数据不足",
+}
+
+
+def _score_state(latest: pd.Series, df: pd.DataFrame) -> tuple[int, list[str], list[str], str, str]:
+    """评分制判断当日市场状态。返回 (score, reasons, weaknesses, ma21_dir, ma60_dir)。"""
+    price = float(latest["close"])
+    ma8 = float(latest["ma8"])
+    ma21 = float(latest["ma21"])
+    ma60 = float(latest["ma60"])
+
+    # MA21 方向：5日斜率
+    ma21_5d_ago = float(df["ma21"].iloc[-6])
+    ma21_slope = ma21 / ma21_5d_ago - 1 if ma21_5d_ago > 0 else 0.0
+    if ma21_slope > config.MA21_SLOPE_UP:
+        ma21_dir = "向上"
+    elif ma21_slope < config.MA21_SLOPE_DOWN:
+        ma21_dir = "向下"
+    else:
+        ma21_dir = "走平"
+
+    # MA60 方向：10日斜率
+    ma60_10d_ago = float(df["ma60"].iloc[-11])
+    ma60_slope = ma60 / ma60_10d_ago - 1 if ma60_10d_ago > 0 else 0.0
+    if ma60_slope > config.MA60_SLOPE_UP:
+        ma60_dir = "向上"
+    elif ma60_slope < config.MA60_SLOPE_DOWN:
+        ma60_dir = "向下"
+    else:
+        ma60_dir = "走平"
+
+    score = 0
+    reasons: list[str] = []
+    weaknesses: list[str] = []
+
+    # —— 正向条件 ——
+    if price > ma21:
+        score += config.SCORE_PRICE_ABOVE_MA21
+        reasons.append("收盘价高于MA21")
+    else:
+        score += config.SCORE_PRICE_BELOW_MA21
+        weaknesses.append("收盘价低于MA21")
+
+    if price > ma60:
+        score += config.SCORE_PRICE_ABOVE_MA60
+        reasons.append("收盘价高于MA60")
+    else:
+        score += config.SCORE_PRICE_BELOW_MA60
+        weaknesses.append("收盘价低于MA60")
+
+    if ma8 > ma21:
+        score += config.SCORE_MA8_ABOVE_MA21
+        reasons.append("MA8高于MA21")
+    else:
+        score += config.SCORE_MA8_BELOW_MA21
+        weaknesses.append("MA8低于MA21")
+
+    if ma21 > ma60:
+        score += config.SCORE_MA21_ABOVE_MA60
+        reasons.append("MA21高于MA60")
+    else:
+        score += config.SCORE_MA21_BELOW_MA60
+        weaknesses.append("MA21低于MA60")
+
+    if ma21_dir == "向上":
+        score += config.SCORE_MA21_UP
+        reasons.append("MA21最近5日向上")
+    elif ma21_dir == "向下":
+        score += config.SCORE_MA21_DOWN
+        weaknesses.append("MA21最近5日向下")
+    # 走平不加减分
+
+    if ma60_dir == "向下":
+        score += config.SCORE_MA60_DOWN
+        weaknesses.append("MA60最近10日向下")
+    else:
+        score += config.SCORE_MA60_NOT_DOWN
+        if ma60_dir == "向上":
+            reasons.append("MA60最近10日向上或走平")
+
+    # —— 震荡检测 ——
+    mas = [ma8, ma21, ma60]
+    mas_sorted = sorted(mas)
+    proximity = (mas_sorted[-1] / mas_sorted[0] - 1) if mas_sorted[0] > 0 else 999
+
+    crossing_count = 0
+    for offset in range(1, min(11, len(df) - 1)):
+        try:
+            p_back = float(df["close"].iloc[-offset])
+            m21_back = float(df["ma21"].iloc[-offset])
+            p_prev = float(df["close"].iloc[-offset - 1])
+            m21_prev = float(df["ma21"].iloc[-offset - 1])
+            if (p_back - m21_back) * (p_prev - m21_prev) < 0:
+                crossing_count += 1
+        except (ValueError, TypeError, IndexError):
+            continue
+
+    is_choppy = proximity < config.RANGE_PROXIMITY_PCT or crossing_count >= config.RANGE_CROSSING_COUNT
+
+    if is_choppy:
+        weaknesses.append("均线贴近、价格频繁穿越MA21，趋势不明确")
+
+    return score, reasons, weaknesses, ma21_dir, ma60_dir
+
+
+def _classify_state(score: int) -> str:
+    """分数 → 状态类别。"""
+    if score >= config.STATE_SCORE_BULL:
+        return "bull"
+    elif score >= config.STATE_SCORE_BULLISH:
+        return "bullish_range"
+    elif score <= config.STATE_SCORE_BEAR:
+        return "bear"
+    elif score <= config.STATE_SCORE_BEARISH:
+        return "bearish_range"
+    else:
+        return "range"
+
+
+def build_market_state(df: pd.DataFrame, instrument: InstrumentSpec | None = None) -> dict:
+    """评分制市场状态判断。使用 MA8/21/60，内置确认延迟与迟滞。"""
+    data_source = "ETF自身数据"
+    if instrument is not None and instrument.has_tracked_index:
+        data_source = f"{instrument.index_name}指数"
+
+    if len(df) < 60:
+        return {
+            "code": _STATE_CODES["unknown"],
+            "name": _STATE_NAMES["unknown"],
+            "score": 0,
+            "data_source": data_source,
+            "reasons": ["需要至少60个交易日数据"],
+            "weaknesses": [],
+            "state_class": "unknown",
+            "state_label": _STATE_NAMES["unknown"],
+            "explanation": "需要至少60个交易日数据。",
+            "alignment": "—",
+            "ma60_direction": "—",
+            "ma21_direction": "—",
+            "stability_note": "",
+            "confirmed": False,
+            "ma_details": {},
+        }
+
+    latest = df.iloc[-1]
+    try:
+        price = float(latest["close"])
+        ma8 = float(latest["ma8"])
+        ma21 = float(latest["ma21"])
+        ma60 = float(latest["ma60"])
+        ma150 = float(latest["ma150"]) if "ma150" in latest and not pd.isna(latest["ma150"]) else None
+    except (ValueError, TypeError, KeyError):
+        return {
+            "code": _STATE_CODES["unknown"],
+            "name": _STATE_NAMES["unknown"],
+            "score": 0,
+            "data_source": data_source,
+            "reasons": [],
+            "weaknesses": [],
+            "state_class": "unknown",
+            "state_label": _STATE_NAMES["unknown"],
+            "explanation": "均线数据不完整。",
+            "alignment": "—",
+            "ma60_direction": "—",
+            "ma21_direction": "—",
+            "ma150_direction": "—",
+            "stability_note": "",
+            "confirmed": False,
+            "ma_details": {},
+        }
+
+    if any(pd.isna(v) for v in (ma8, ma21, ma60, price)):
+        return {
+            "code": _STATE_CODES["unknown"],
+            "name": _STATE_NAMES["unknown"],
+            "score": 0,
+            "data_source": data_source,
+            "reasons": [],
+            "weaknesses": [],
+            "state_class": "unknown",
+            "state_label": _STATE_NAMES["unknown"],
+            "explanation": "均线数据不完整。",
+            "alignment": "—",
+            "ma60_direction": "—",
+            "ma21_direction": "—",
+            "ma150_direction": "—",
+            "stability_note": "",
+            "confirmed": False,
+            "ma_details": {},
+        }
+
+    score, reasons, weaknesses, ma21_dir, ma60_dir = _score_state(latest, df)
+    state_class = _classify_state(score)
+
+    # MA150 方向（背景参考，不参与状态判定）
+    ma150_dir = _compute_ma150_direction(df)
+
+    # 迟滞：退出多头/空头需要更低/更高分
+    if state_class == "bull" and not _confirm_hysteresis(df, "bull"):
+        # 过去状态更像偏多则降级
+        state_class = "bullish_range"
+    elif state_class == "bear" and not _confirm_hysteresis(df, "bear"):
+        state_class = "bearish_range"
+
+    # 稳定性确认
+    stability_days = _count_stability(df, state_class)
+    confirmed = stability_days >= config.CONFIRM_DAYS
+
+    # 对齐描述
+    mas = [ma8, ma21, ma60]
+    if mas[0] > mas[1] > mas[2]:
+        alignment = "多头排列"
+    elif mas[0] < mas[1] < mas[2]:
+        alignment = "空头排列"
+    elif sum(1 for i in range(2) if mas[i] > mas[i + 1]) >= 1:
+        alignment = "偏多排列" if ma8 > ma21 or ma21 > ma60 else "偏空排列"
+    else:
+        alignment = "均线缠绕"
+
+    # 解释文字
+    explanation = _build_explanation(state_class, reasons, weaknesses, ma21_dir, ma60_dir)
+
+    if confirmed:
+        stability_note = f"状态已确认，持续{stability_days}日"
+    else:
+        remaining = config.CONFIRM_DAYS - stability_days
+        stability_note = f"状态切换中，还需{remaining}日确认（已持续{stability_days}日）"
+
+    state_label = _STATE_NAMES.get(state_class, state_class)
+    if not confirmed and state_class not in ("range",):
+        state_label += "（待确认）"
+
+    return {
+        "code": _STATE_CODES.get(state_class, "UNKNOWN"),
+        "name": _STATE_NAMES.get(state_class, state_class),
+        "score": score,
+        "data_source": data_source,
+        "reasons": reasons,
+        "weaknesses": weaknesses,
+        "state_class": state_class,
+        "state_label": state_label,
+        "explanation": explanation,
+        "alignment": alignment,
+        "ma60_direction": ma60_dir,
+        "ma21_direction": ma21_dir,
+        "ma150_direction": ma150_dir,
+        "stability_note": stability_note,
+        "confirmed": confirmed,
+        "ma_details": {
+            "ma8": round(ma8, 4),
+            "ma21": round(ma21, 4),
+            "ma60": round(ma60, 4),
+            "ma150": round(ma150, 4) if ma150 is not None else None,
+            "price": round(price, 4),
+        },
+    }
+
+
+def _compute_ma150_direction(df: pd.DataFrame) -> str:
+    """MA150 方向判断，仅作背景参考。20日对比，阈值 ±0.05%。"""
+    if "ma150" not in df.columns or len(df) < 170:
+        return "数据不足"
+    try:
+        current = float(df["ma150"].iloc[-1])
+        ago = float(df["ma150"].iloc[-21])  # 约一个月前
+        if pd.isna(current) or pd.isna(ago) or ago <= 0:
+            return "数据不足"
+        change = (current - ago) / ago
+        if change > 0.0005:
+            return "上升"
+        elif change < -0.0005:
+            return "下降"
+        else:
+            return "走平"
+    except (ValueError, TypeError, IndexError):
+        return "数据不足"
+
+
+# ── 相对强度（同市场内横向对比，仅作仪表盘参考，不参与买卖决策）──
+
+# 各 ETF 的相对强度基准：A 股以沪深 300 为基准，港股以恒生指数为基准
+_RS_BENCHMARK: dict[str, str | None] = {
+    "510300": None,       # 沪深 300 自身，不比较
+    "563360": "510300",   # A500 vs 沪深 300
+    "588000": "510300",   # 科创 50 vs 沪深 300
+    "159920": None,       # 恒生指数自身，不比较
+    "513180": "159920",   # 恒生科技 vs 恒生指数
+    # 产业卫星
+    "159570": "159920",   # 港股创新药 vs 恒生指数
+    "561380": "510300",   # 电网设备 vs 沪深 300
+    "516150": "510300",   # 稀土 vs 沪深 300
+    "560860": "510300",   # 工业有色 vs 沪深 300
+    "159995": "510300",   # 芯片/集成电路 vs 沪深 300
+    "159819": "510300",   # AI 算力 vs 沪深 300
+    "159755": "510300",   # 动力电池 vs 沪深 300
+    "512630": "510300",   # 卫星互联网 vs 沪深 300
+    "159663": "510300",   # 高端装备/机床 vs 沪深 300
+    "512400": "510300",   # 有色金属 vs 沪深 300
+    # 报告判定不合格但值得跟踪主题热度
+    "515250": "510300",   # 智能汽车 vs 沪深 300
+    "159665": "510300",   # 半导体设备 vs 沪深 300
+    "159883": "510300",   # 医疗器械 vs 沪深 300
+    "516090": "510300",   # 储能 vs 沪深 300
+    "562500": "510300",   # 机器人 vs 沪深 300
+}
+
+
+def _load_benchmark_prices(benchmark_code: str) -> pd.Series | None:
+    """从 cache 加载基准 ETF 的收盘价序列。"""
+    import os
+    cache_path = os.path.join(os.path.dirname(__file__), "cache", f"{benchmark_code}.csv")
+    if not os.path.exists(cache_path):
+        return None
+    try:
+        df = pd.read_csv(cache_path, parse_dates=["date"], index_col="date")
+        if "close" not in df.columns:
+            return None
+        return df["close"].sort_index()
+    except Exception:
+        return None
+
+
+def build_relative_strength(symbol: str, etf_close: pd.Series) -> dict | None:
+    """计算 ETF 相对其市场基准的相对强度（Weinstein 体系）。
+
+    A 股以沪深 300 (510300) 为基准，港股以恒生指数 (159920) 为基准。
+    RS 趋势基于 30 周 (~150日) 均线方向，RS 变动基于 52 周 (~250日) 比较。
+    仅作仪表盘参考，不参与买卖信号判定。
+    """
+    benchmark_code = _RS_BENCHMARK.get(symbol)
+    if benchmark_code is None:
+        return None
+
+    benchmark_close = _load_benchmark_prices(benchmark_code)
+    if benchmark_close is None or benchmark_close.empty:
+        return None
+
+    common = etf_close.index.intersection(benchmark_close.index)
+    if len(common) < 200:
+        return None
+
+    etf_aligned = etf_close[common].sort_index()
+    bm_aligned = benchmark_close[common].sort_index()
+
+    # RS 比值 = ETF价格 / 基准价格 × 100
+    rs_series = (etf_aligned / bm_aligned) * 100
+
+    # RS 变动：当前 vs 250 日前（52 周）
+    lookback_250 = min(251, len(rs_series))
+    current_rs = float(rs_series.iloc[-1])
+    rs_250d_ago = float(rs_series.iloc[-lookback_250])
+    rs_change = (current_rs - rs_250d_ago) / rs_250d_ago * 100 if rs_250d_ago > 0 else 0.0
+
+    # RS 趋势：MA150（30 周）斜率方向
+    if len(rs_series) >= 170:
+        rs_ma150 = rs_series.rolling(150).mean()
+        rs_ma_current = float(rs_ma150.iloc[-1])
+        rs_ma_20d_ago = float(rs_ma150.iloc[-21])
+        if rs_ma_current > rs_ma_20d_ago:
+            rs_trend = "上升"
+        elif rs_ma_current < rs_ma_20d_ago:
+            rs_trend = "下降"
+        else:
+            rs_trend = "走平"
+    else:
+        rs_trend = "数据不足"
+
+    bm_names = {"510300": "沪深300", "159920": "恒生指数"}
+    bm_name = bm_names.get(benchmark_code, benchmark_code)
+
+    if rs_trend == "上升":
+        note = f"持续跑赢{bm_name}，30 周 RS 均线趋势向上"
+    elif rs_trend == "下降":
+        note = f"持续跑输{bm_name}，30 周 RS 均线趋势向下"
+    else:
+        note = f"与{bm_name}基本同步，30 周 RS 均线走平"
+
+    return {
+        "rs_trend": rs_trend,
+        "rs_change_pct": round(rs_change, 1),
+        "benchmark_name": bm_name,
+        "note": note,
+    }
+
+
+def build_relative_strength_for_symbol(symbol: str) -> dict | None:
+    """便捷版：从 cache 自动加载 ETF 价格，计算相对强度。"""
+    etf_close = _load_benchmark_prices(symbol)
+    if etf_close is None or etf_close.empty:
+        return None
+    return build_relative_strength(symbol, etf_close)
+
+
+def _confirm_hysteresis(df: pd.DataFrame, extreme_state: str) -> bool:
+    """迟滞检查：极端状态是否在过去5日中至少有3日满足。"""
+    count = 0
+    for offset in range(0, 5):
+        if len(df) <= offset + 11:
+            break
+        try:
+            row = df.iloc[-1 - offset]
+            score, _, _, _, _ = _score_state(row, df)
+            sc = _classify_state(score)
+            if sc == extreme_state:
+                count += 1
+        except (ValueError, TypeError):
+            continue
+    return count >= 3
+
+
+def _count_stability(df: pd.DataFrame, state_class: str) -> int:
+    """向前回溯，统计当前状态已持续多少个交易日。"""
+    days = 1
+    for offset in range(1, min(22, len(df) - 1)):
+        try:
+            row = df.iloc[-1 - offset]
+            score, _, _, _, _ = _score_state(row, df)
+            sc = _classify_state(score)
+            if sc == state_class:
+                days += 1
+            else:
+                break
+        except (ValueError, TypeError):
+            break
+    return days
+
+
+def _build_explanation(state_class: str, reasons: list[str], weaknesses: list[str],
+                       ma21_dir: str, ma60_dir: str) -> str:
+    """生成市场状态的文字描述。"""
+    parts = []
+
+    if state_class == "bull":
+        parts.append("多头条件全面满足")
+    elif state_class == "bear":
+        parts.append("空头条件全面满足")
+    elif state_class == "bullish_range":
+        parts.append("偏多震荡，多数条件偏多但排列尚未完全修复")
+    elif state_class == "bearish_range":
+        parts.append("偏空震荡，多数条件偏空但未形成完全空头")
+    else:
+        parts.append("均线缠绕或信号矛盾，市场方向不明确")
+
+    if reasons:
+        parts.append("偏多信号：" + "、".join(reasons[:4]))
+    if weaknesses:
+        parts.append("偏空信号：" + "、".join(weaknesses[:4]))
+    parts.append(f"MA21{ma21_dir}，MA60{ma60_dir}")
+
+    return "。".join(parts) + "。"
 
 
 # ── 买入条件检查（三套场景） ──

@@ -1,0 +1,38 @@
+import sys; sys.path.insert(0, '.')
+from data import load_data
+from dashboard import compute_indicators
+from datetime import date
+
+SYMBOLS = ["563360", "510300", "518880", "561380", "516150", "159570", "560860", "513180", "588000"]
+today = date.today()
+
+print(f"=== 数据新鲜度检查 {today} ===\n")
+
+ok = []
+issues = []
+for sym in SYMBOLS:
+    df = load_data(sym)
+    edf = compute_indicators(df)
+    last_date = str(edf.index[-1])[:10]
+    src = df.attrs.get('source', '?')
+    rvol_ok = edf.attrs.get('rvol_available', False)
+    rvol_val = edf['rvol'].dropna().iloc[-1] if rvol_ok else None
+    rvol_str = f"RVOL={rvol_val:.2f}" if rvol_val is not None else "RVOL=N/A"
+    note = df.attrs.get('refresh_note', '') or df.attrs.get('refresh_error', '')
+
+    line = f"{sym} | src={src} | {last_date} | {rvol_str}"
+    if str(last_date) == str(today):
+        ok.append(line)
+    else:
+        issues.append(line)
+        if note:
+            issues.append(f"  -> {note}")
+
+for line in ok:
+    print("OK  ", line)
+if issues:
+    print()
+    for line in issues:
+        print("ISSUE", line)
+
+print(f"\n{len(ok)}/{len(SYMBOLS)} 数据到今日")

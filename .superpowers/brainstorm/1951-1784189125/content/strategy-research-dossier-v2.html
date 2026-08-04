@@ -1,0 +1,101 @@
+<style>
+  .shell { max-width:1120px; margin:16px auto 0; border:1px solid #dfe6e2; border-radius:16px; overflow:hidden; background:#fff; color:#22332e; box-shadow:0 14px 42px rgba(27,64,55,.08); }
+  .top { padding:20px 22px 16px; background:linear-gradient(120deg,#f2f8f5,#fff); border-bottom:1px solid #e3eae6; }
+  .topline { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
+  .eyebrow { color:#1b6b5c; font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+  .title { margin:4px 0 5px; font-size:23px; font-weight:800; }
+  .desc { color:#60736c; font-size:13px; line-height:1.5; }
+  .review { border:1px solid #cfe0d8; background:#fff; border-radius:10px; padding:10px 12px; min-width:205px; font-size:11px; }
+  .review b { display:block; font-size:13px; margin-bottom:3px; }
+  .tabs { display:flex; gap:4px; padding:10px 20px 0; border-bottom:1px solid #e7ece9; }
+  .tab { padding:9px 12px; color:#6a7c75; font-size:12px; }
+  .tab.active { color:#1b6b5c; border-bottom:3px solid #1b6b5c; font-weight:750; }
+  .body { padding:18px 20px 22px; }
+  .thesis { display:grid; grid-template-columns:1.4fr .8fr; gap:12px; margin-bottom:15px; }
+  .thesis-main { background:#173f36; color:#fff; border-radius:12px; padding:17px; }
+  .thesis-main h3 { margin:0 0 5px; font-size:18px; }
+  .thesis-main p { margin:0; color:#d8e8e1; font-size:12px; line-height:1.5; }
+  .stage { border:1px solid #dfe6e2; border-radius:12px; padding:14px; }
+  .stage strong { display:block; font-size:13px; margin-bottom:10px; }
+  .ladder { display:flex; align-items:center; gap:5px; }
+  .step { flex:1; height:8px; background:#dfe8e4; border-radius:8px; }
+  .step.on { background:#1b6b5c; }
+  .stage-labels { display:flex; justify-content:space-between; margin-top:7px; font-size:9px; color:#71827c; }
+  .section-title { display:flex; justify-content:space-between; align-items:end; margin:17px 0 8px; }
+  .section-title h3 { margin:0; font-size:15px; }
+  .section-title span { color:#74847e; font-size:10px; }
+  .matrix { border:1px solid #e0e7e3; border-radius:10px; overflow:hidden; }
+  .row { display:grid; grid-template-columns:1.15fr .75fr .85fr .85fr .8fr; gap:8px; padding:9px 11px; font-size:11px; border-bottom:1px solid #edf1ef; align-items:center; }
+  .row:last-child { border-bottom:0; }
+  .row.head { background:#f4f7f5; color:#6c7b76; font-size:9px; font-weight:750; text-transform:uppercase; }
+  .industry { font-weight:750; }
+  .badge { display:inline-flex; padding:3px 7px; border-radius:999px; font-size:9px; font-weight:750; }
+  .green { background:#e2f1e9; color:#17624e; }
+  .amber { background:#fff1d8; color:#8a5a09; }
+  .gray { background:#eef1ef; color:#66736e; }
+  .confirmed { color:#17624e; font-weight:700; }
+  .detail { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .panel { border:1px solid #e0e7e3; border-radius:10px; padding:12px; min-height:96px; }
+  .panel h4 { margin:0 0 7px; font-size:12px; }
+  .panel p, .panel li { margin:0; font-size:10px; line-height:1.55; color:#667670; }
+  .panel ul { margin:0; padding-left:16px; }
+  .quote { padding-left:9px; border-left:3px solid #d0ded7; }
+  .trigger { display:flex; gap:8px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #edf1ef; }
+  .trigger:last-child { border:0; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#d99a34; margin-top:3px; flex:0 0 auto; }
+  .foot { margin-top:14px; padding:10px 12px; background:#f6f8f7; border-radius:9px; color:#687871; font-size:10px; display:flex; justify-content:space-between; }
+  .actions { display:flex; gap:10px; margin-top:18px; justify-content:center; }
+  .choice { border:1px solid #cddbd4; border-radius:10px; padding:10px 16px; cursor:pointer; background:#fff; font-weight:700; font-size:13px; }
+  .choice:hover,.choice.selected { background:#1b6b5c; color:#fff; border-color:#1b6b5c; }
+  @media(max-width:780px){.thesis,.detail{grid-template-columns:1fr}.row{grid-template-columns:1.2fr .9fr .9fr}.row>*:nth-child(4),.row>*:nth-child(5){display:none}.topline{display:block}.review{margin-top:12px}.tabs{overflow:auto}}
+</style>
+
+<h2>第二版：把它做成“战略研究档案”，而不是每日行情榜</h2>
+<p class="subtitle">下面模拟的是一次完整复核后的稳定页面。平时只看当前结论；重大文件或事件出现时，再进入审核与更新。</p>
+
+<div class="shell">
+  <div class="top">
+    <div class="topline">
+      <div>
+        <div class="eyebrow">ETF 决策辅助 · 战略层</div>
+        <div class="title">政府资金方向</div>
+        <div class="desc">回答未来三到五年的配置方向，不回答今天是否买入。</div>
+      </div>
+      <div class="review"><b>本轮正式复核：2026-07-16</b>28 条双确认 · 7 条待审核<br>建议下次例行复核：2026-10</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active">战略总览</div><div class="tab">产业档案</div><div class="tab">证据审核 7</div><div class="tab">历次变化</div><div class="tab">方法与来源</div>
+  </div>
+  <div class="body">
+    <div class="thesis">
+      <div class="thesis-main"><h3>当前主线：半导体与人工智能</h3><p>国家层定调稳定，地方产业基金、算力建设和重点项目继续落地。方向维持，不因短期价格涨跌调整；科技总仓位仍由账户上限控制。</p></div>
+      <div class="stage"><strong>证据成熟度 · 半导体</strong><div class="ladder"><i class="step on"></i><i class="step on"></i><i class="step on"></i><i class="step"></i></div><div class="stage-labels"><span>政策</span><span>资金</span><span>项目</span><span>兑现</span></div></div>
+    </div>
+
+    <div class="section-title"><h3>方向总表</h3><span>只使用双确认材料 · 点击产业进入完整档案</span></div>
+    <div class="matrix">
+      <div class="row head"><span>产业</span><span>当前阶段</span><span>趋势</span><span>ETF映射</span><span>证据</span></div>
+      <div class="row"><span class="industry">半导体</span><span><i class="badge green">项目落地</i></span><span>持续增强</span><span>159995 · 精准</span><span class="confirmed">12 已确认</span></div>
+      <div class="row"><span class="industry">人工智能</span><span><i class="badge green">项目落地</i></span><span>持续增强</span><span>159819 · 相关</span><span class="confirmed">9 已确认</span></div>
+      <div class="row"><span class="industry">机器人</span><span><i class="badge amber">资金承诺</i></span><span>由培育转工程化</span><span>暂无精准标的</span><span>5 已确认</span></div>
+      <div class="row"><span class="industry">低空经济</span><span><i class="badge gray">政策提出</i></span><span>观察</span><span>代理映射</span><span>2 已确认</span></div>
+    </div>
+
+    <div class="section-title"><h3>半导体 · 研究档案预览</h3><span>完整页面保留原项目的详细阅读能力</span></div>
+    <div class="detail">
+      <div class="panel"><h4>长期投资逻辑</h4><p>从政策支持升级为产业链自主可控、设备材料补短板和重大制造项目并行。重点观察政府资本是否继续进入设备、材料及先进制造。</p></div>
+      <div class="panel"><h4>ETF映射与重叠</h4><p>芯片ETF 159995 为精准行业映射；科创50同时含较高科技暴露。系统只展示重合度，不把两个标的当成两份独立方向。</p></div>
+      <div class="panel"><h4>已确认原文</h4><p class="quote">“支持集成电路装备、零部件、材料和EDA工具发展……”<br>上海市2026年政府工作报告 · P12 · 达达确认</p></div>
+      <div class="panel"><h4>风险与证伪条件</h4><ul><li>产业基金或重大项目持续缩减</li><li>资本开支增加但盈利长期不兑现</li><li>ETF估值明显透支政策预期</li></ul></div>
+      <div class="panel"><h4>需要更新的事件</h4><div class="trigger"><i class="dot"></i><p>中央或地方新规划、预算、产业基金发布</p></div><div class="trigger"><i class="dot"></i><p>重大项目开工、延期、取消或扩产</p></div></div>
+      <div class="panel"><h4>版本变化</h4><p>2026-07：首次正式复核，结论“持续增强”<br>下一次只有新证据达到阈值才变更结论，并保留旧版本。</p></div>
+    </div>
+    <div class="foot"><span>战略结论不触发买入；买入时机仍交给 RSI 等技术指标。</span><span>原始材料：G盘政府报告资料库</span></div>
+  </div>
+</div>
+
+<div class="actions">
+  <div class="choice option" data-choice="approve-dossier" onclick="toggleSelect(this)">这个结构对</div>
+  <div class="choice option" data-choice="revise-dossier" onclick="toggleSelect(this)">还要调整</div>
+</div>

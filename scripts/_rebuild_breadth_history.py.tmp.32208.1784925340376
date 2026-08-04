@@ -1,0 +1,146 @@
+"""重建 A 股指数成分股价格历史：从 2018 年起拉取全量日线。
+增量模式：已有 2018 年数据的股票跳过，只补缺失的。每只股票完成后立即写入 CSV。
+串行拉取，间隔 0.8s 防反爬，简洁 print 输出。"""
+import sys, os, time
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pandas as pd
+import akshare as ak
+from datetime import datetime
+
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "breadth")
+
+TARGETS = [
+    ("000300", "沪深300"),
+    ("000510", "A500"),
+    ("000688", "科创50"),
+]
+
+START_DATE = "20180101"
+END_DATE = datetime.now().strftime("%Y%m%d")
+
+
+def load_constituents(index_code):
+    path = os.path.join(CACHE, f"{index_code}_constituents.csv")
+    if not os.path.exists(path):
+        return []
+    df = pd.read_csv(path)
+    if "code" in df.columns:
+        codes = df["code"].astype(str).tolist()
+    else:
+        codes = df.iloc[:, 0].astype(str).tolist()
+    return codes
+
+
+def load_existing(index_code):
+    """返回已有价格历史的 (DataFrame, set of stock codes with >=2000 days data)."""
+    path = os.path.join(CACHE, f"{index_code}_price_history.csv")
+    if not os.path.exists(path):
+        return pd.DataFrame(), set()
+    df = pd.read_csv(path, index_col=0)
+    df.index = pd.to_datetime(df.index, format="mixed")
+    # 已有足够历史的股票（>= 1800 天 ≈ 2018年起）
+    done = set()
+    for col in df.columns:
+        if df[col].dropna().shape[0] >= 1800:
+            done.add(col)
+    return df, done
+
+
+def fetch_one(sym):
+    """拉取单只股票全量日线。返回 {date: price} 或空 dict。"""
+    market_sym = f"sh{sym}" if sym.startswith(("5", "6", "9")) else f"sz{sym}"
+    for attempt in range(3):
+        try:
+            df = ak.stock_zh_a_hist_tx(symbol=market_sym, start_date=START_DATE, end_date=END_DATE)
+            if df is not None and not df.empty and "close" in df.columns:
+                result = {}
+                for _, row in df.iterrows():
+                    d = row["date"]
+                    date_str = d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d)[:10]
+                    result[date_str] = float(row["close"])
+                if len(result) >= 1800:  # 至少要有 2018 年至今的数据量
+                    return result
+                else:
+                    return {}
+            return {}
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(1.0)
+            else:
+                return {}
+    return {}
+
+
+def save_progress(index_code, hist_df, new_stock_data):
+    """将新数据合并到历史 DataFrame 并写入 CSV。"""
+    if not new_stock_data:
+        return hist_df
+    for sym, prices in new_stock_data.items():
+        if prices:
+            # 添加整列
+            for date_str, price in prices.items():
+                hist_df.at[date_str, sym] = price
+    hist_df = hist_df.sort_index()
+    path = os.path.join(CACHE, f"{index_code}_price_history.csv")
+    hist_df.to_csv(path)
+    return hist_df
+
+
+def rebuild_index(index_code, name):
+    codes = load_constituents(index_code)
+    if not codes:
+        print(f"{name}: 无成分股数据，跳过")
+        return
+
+    hist_df, done = load_existing(index_code)
+    todo = [s for s in codes if s not in done]
+
+    print(f"\n{'='*60}")
+    print(f"{name} ({index_code}): {len(codes)} 成分股, 已有 {len(done)} 只, 需补 {len(todo)} 只")
+    print(f"日期范围: {START_DATE} ~ {END_DATE}")
+
+    if not todo:
+        print(f"{name}: 全部完成！")
+        return
+
+    success = 0
+    failed = 0
+    batch = {}  # 每10只攒一批写入
+    total = len(todo)
+
+    for i, sym in enumerate(todo):
+        data = fetch_one(sym)
+        if data:
+            success += 1
+            batch[sym] = data
+        else:
+            failed += 1
+            if failed <= 10:
+                print(f"  [{i+1}/{total}] {sym}: 失败（数据不足或网络错误）")
+
+        # 每 10 只写入一次
+        if len(batch) >= 10:
+            hist_df = save_progress(index_code, hist_df, batch)
+            batch = {}
+            pct = (i + 1) * 100 // total
+            print(f"  [{i+1}/{total}] {pct}% — 成功 {success}, 失败 {failed}")
+
+        time.sleep(0.8)  # 串行间隔防反爬
+
+    # 写入剩余
+    if batch:
+        hist_df = save_progress(index_code, hist_df, batch)
+
+    print(f"{name}: 完成！成功 {success}, 失败 {failed}, 最终 {len(hist_df.columns)} 只, {len(hist_df)} 天")
+
+
+def main():
+    print("重建 A 股指数成分股价格历史（增量模式）")
+    print(f"已禁用 tqdm 噪音，串行拉取间隔 0.8s")
+    for index_code, name in TARGETS:
+        rebuild_index(index_code, name)
+    print("\n全部完成！请运行 backtest_all_indices.py 更新框架数据。")
+
+
+if __name__ == "__main__":
+    main()

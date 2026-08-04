@@ -1,0 +1,51 @@
+"""Try multiple approaches to get HSTECH constituents."""
+# Approach 1: WebFetch HSI press release for latest changes
+import requests
+from bs4 import BeautifulSoup
+import re
+
+# Try to get from HSI official press release
+print("=== Trying HSI press release ===")
+url = 'https://www.hsi.com.hk/eng/indexes/all-indexes/hstech'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+print(f'Status: {r.status_code}, len: {len(r.text)}')
+
+# Look for stock codes in the page
+codes = sorted(set(re.findall(r'\b(0\d{4})\b', r.text)))
+print(f'HK 5-digit codes: {len(codes)}')
+if codes:
+    print(f'All: {codes}')
+
+# Approach 2: Try akshare stock_hk_spot_em to see if we can filter by index
+print("\n=== Trying akshare approaches ===")
+try:
+    import akshare as ak
+    # Try stock_hk_spot_em
+    try:
+        df = ak.stock_hk_spot_em()
+        print(f'stock_hk_spot_em: {len(df)} rows, cols: {list(df.columns[:10])}')
+    except Exception as e:
+        print(f'stock_hk_spot_em failed: {e}')
+
+    # Try index_stock_cons with various names
+    for func_name in ['index_stock_cons', 'stock_board_cons', 'stock_board_industry_cons']:
+        fn = getattr(ak, func_name, None)
+        if fn:
+            print(f'{func_name}: EXISTS')
+        else:
+            print(f'{func_name}: not found')
+except Exception as e:
+    print(f'akshare: {e}')
+
+# Approach 3: Try Wikipedia API to get page content
+print("\n=== Wikipedia API raw content ===")
+api_url = 'https://zh.wikipedia.org/w/api.php?action=parse&page=%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8&prop=text&format=json'
+r3 = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+data = r3.json()
+text = data.get('parse', {}).get('text', {}).get('*', '')
+# Look for a table with many stock codes
+codes = sorted(set(re.findall(r'\b(\d{5})\b', text)))
+hk_codes = [c for c in codes if c.startswith('0')]
+print(f'Total 5-digit codes starting with 0: {len(hk_codes)}')
+# Filter out likely noise (too many or too specific patterns)
+print(f'All 0-prefixed: {hk_codes}')

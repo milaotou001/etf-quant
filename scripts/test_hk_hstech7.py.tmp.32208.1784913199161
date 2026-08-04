@@ -1,0 +1,49 @@
+"""Extract HSTECH constituents from Chinese Wikipedia - all tables."""
+import requests
+from bs4 import BeautifulSoup
+import re
+
+url = 'https://zh.wikipedia.org/wiki/%E6%81%92%E7%94%9F%E7%A7%91%E6%8A%80%E6%8C%87%E6%95%B8'
+r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+soup = BeautifulSoup(r.text, 'html.parser')
+
+tables = soup.find_all('table', class_='wikitable')
+print(f'Found {len(tables)} wikitables')
+
+for i, table in enumerate(tables):
+    rows = table.find_all('tr')
+    if len(rows) < 10:
+        continue
+
+    print(f'\nTable {i}: {len(rows)} rows')
+
+    # Extract ALL unique 5-digit numbers that look like HK stock codes (start with 0)
+    all_text = table.get_text()
+    all_codes = set()
+    for m in re.finditer(r'\b(0\d{3,4})\b', all_text):
+        all_codes.add(m.group(1).zfill(5))
+
+    if all_codes:
+        # Filter out obvious non-stock-codes (like years)
+        stock_codes = sorted(c for c in all_codes if 1 <= int(c) <= 99999)
+        print(f'  HK-style codes: {len(stock_codes)}: {stock_codes}')
+
+    # Also try: extract codes from href links
+    href_codes = set()
+    for a in table.find_all('a'):
+        href = a.get('href', '')
+        # Look for links like /wiki/00700 or stock code in href
+        m = re.search(r'/(0\d{3,4})', href)
+        if m:
+            href_codes.add(m.group(1).zfill(5))
+    if href_codes:
+        print(f'  Href codes: {len(href_codes)}: {sorted(href_codes)[:20]}')
+
+    # For the first table with many codes, print rows
+    if i == 0 and len(rows) >= 15:
+        for j, row in enumerate(rows):
+            cells = [td.get_text(strip=True) for td in row.find_all(['th', 'td'])]
+            if cells:
+                # Clean cell text
+                cleaned = [re.sub(r'\[.*?\]', '', c).strip()[:50] for c in cells]
+                print(f'  Row {j}: {cleaned}')

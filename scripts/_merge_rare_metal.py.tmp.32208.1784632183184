@@ -1,0 +1,36 @@
+import sys; sys.path.insert(0, '.')
+import json, copy
+from purchase_plan import (
+    load_purchase_plan, save_purchase_plan, _new_item,
+    PURCHASE_PLAN_PATH
+)
+
+p = load_purchase_plan(str(PURCHASE_PLAN_PATH))
+
+# 稀土 516150: keep item 01, remove 02 and 03
+rare = p['assets']['516150']
+rare['items'] = [i for i in rare['items'] if i['number'] == 1]
+rare['reserved_amount'] = 1500.0
+rare['plan_note'] = '已合并至工业有色（560860），仅保留底仓1,500，不再追加。'
+rare['target'] = 1500.0
+
+# 工业有色 560860: keep item 01 (720 bought), rebuild remaining
+metal = p['assets']['560860']
+old_01 = [i for i in metal['items'] if i['number'] == 1][0]
+new_items = [old_01]
+# new rounds: (720, 2000, 3500), (1000, 1500, 2500)
+new_amounts = [2000.0, 3500.0, 1000.0, 1500.0, 2500.0]
+for idx, amt in enumerate(new_amounts, start=2):
+    new_items.append(_new_item('560860', idx, amt))
+metal['items'] = new_items
+metal['reserved_amount'] = 10500.0
+metal['plan_note'] = '第1轮：等止跌/回踩/右侧 · 第2轮：等Q3铜价趋势确认 · 已合并稀土预算'
+
+save_purchase_plan(p)
+
+# verify
+p2 = load_purchase_plan(str(PURCHASE_PLAN_PATH))
+print('稀土 items:', [(i['id'], i['status'], i['planned_amount']) for i in p2['assets']['516150']['items']])
+print('有色 items:', [(i['id'], i['status'], i['planned_amount']) for i in p2['assets']['560860']['items']])
+print('有色 reserved:', p2['assets']['560860']['reserved_amount'])
+print('OK')

@@ -1,0 +1,61 @@
+"""List all sector ETFs available and check for gaps vs 31-province report"""
+import pandas as pd
+from dashboard import build_relative_strength_for_symbol
+
+# All ETFs that have cache data and could be sector-related
+candidates = {
+    "159995": "芯片/集成电路",
+    "159819": "AI算力",
+    "159755": "动力电池",
+    "561380": "电网设备",
+    "516150": "稀土",
+    "560860": "工业有色",
+    "512400": "有色金属",
+    "159570": "港股创新药",
+    "512630": "卫星互联网",
+    "159663": "机床/工业母机",
+    "513180": "恒生科技",
+    "588000": "科创50",
+    "563360": "A500",
+    "510300": "沪深300",
+}
+
+print("所有可算RS的ETF:")
+for sym, name in sorted(candidates.items()):
+    rs = build_relative_strength_for_symbol(sym)
+    if rs:
+        print(f"  {sym} {name}: RS {rs['rs_change_pct']:+.1f}% {rs['rs_trend']} vs {rs['benchmark_name']}")
+    else:
+        print(f"  {sym} {name}: 无RS数据")
+
+# Check what's missing from the 31-province report categories
+print("\n=== 31省报告覆盖检查 ===")
+report_categories = {
+    "新型电力系统/电网": ["561380"],
+    "储能": [],  # no dedicated ETF found
+    "新能源装备": [],
+    "高端装备/工业母机": ["159663"],
+    "机器人": [],
+    "先进材料/稀土": ["516150"],
+    "战略资源/有色": ["560860", "512400"],
+    "碳纤维/电子材料": [],
+    "集成电路/芯片": ["159995"],
+    "半导体设备材料": [],
+    "存储/光电子": [],
+    "AI基础设施": ["159819"],
+    "数据/产业智能化": [],
+    "智能汽车": [],
+    "动力电池": ["159755"],
+    "商业航天/卫星": ["512630"],
+    "航空制造": [],
+    "生物医药/创新药": ["159570"],
+    "医疗器械": [],
+    "低空经济": [],
+    "具身智能": [],
+    "脑机接口": [],
+    "生物制造": [],
+}
+
+for cat, etfs in report_categories.items():
+    status = ", ".join(etfs) if etfs else "缺ETF或缓存"
+    print(f"  {cat}: {status}")

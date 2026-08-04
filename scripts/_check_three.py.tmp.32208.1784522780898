@@ -1,0 +1,17 @@
+import sys
+sys.path.insert(0, r"C:\Users\admin\Desktop\etf量化工具")
+from data import load_data
+from indicators import rsi, sma
+
+for sym, name in [("561380","电网"),("516150","稀土"),("159570","创新药")]:
+    df = load_data(sym)
+    c = df["close"]
+    r = rsi(c)
+    ma60 = sma(c, 60)
+    close = c.iloc[-1]
+    latest_rsi = r.iloc[-1]
+    ma60_val = ma60.iloc[-1]
+    ytd = (close / c[c.index >= "2026-01-01"].iloc[0] - 1) * 100
+    high60 = c.iloc[-60:].max()
+    dd = (close / high60 - 1) * 100
+    print(f"{name}: 收盘 {close:.4f}  RSI {latest_rsi:.1f}  MA60 {ma60_val:.4f}  距MA60 {(close/ma60_val-1)*100:+.1f}%  年内 {ytd:+.1f}%  60日回撤 {dd:+.1f}%")

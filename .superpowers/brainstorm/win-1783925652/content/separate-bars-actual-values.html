@@ -1,0 +1,22 @@
+<h2>修正：每只ETF按真实持仓单独计算</h2>
+<p class="subtitle">宽基总目标仍是40%，但A500和沪深300的已拥有金额不再平均分配，分别由交割单数量×实时价格计算。</p>
+
+<div class="mockup">
+  <div class="mockup-header">独立实时市值进度</div>
+  <div class="mockup-body" style="padding:20px;background:white;display:grid;gap:16px;font-size:12px">
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:#14634f">A500 · 理想20%（¥57,000）</b><span>已拥有约 ¥36,724　缺口约 ¥20,276</span></div><div style="height:20px;border-radius:10px;background:#e6f3ee;overflow:hidden"><div style="width:64.4%;height:100%;background:#1f8a70"></div></div><small style="color:#667085">示例：交割单剩余数量 × 当前价；不与沪深300平均分配</small></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:#285995">沪深300 · 理想20%（¥57,000）</b><span>已拥有约 ¥32,252　缺口约 ¥24,748</span></div><div style="height:20px;border-radius:10px;background:#eaf1fb;overflow:hidden"><div style="width:56.6%;height:100%;background:#3c78c8"></div></div><small style="color:#667085">示例：独立读取沪深300的实际剩余数量和当前价格</small></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:#8a5e0b">黄金 · 理想20%（¥57,000）</b><span>已拥有：上传交割单后计算</span></div><div style="height:20px;border-radius:10px;background:#fff5df;overflow:hidden"><div style="width:0%;height:100%;background:#c58a22"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:#563995">科创50 · 理想10%（¥28,500）</b><span>已拥有约 ¥13,185　缺口约 ¥15,315</span></div><div style="height:20px;border-radius:10px;background:#f0ebfb;overflow:hidden"><div style="width:46.3%;height:100%;background:#7756b5"></div></div></div>
+    <div style="padding:12px;background:#f3f5f6;border-radius:8px;display:flex;justify-content:space-between"><b>现金 / 其他 · 理想30%（¥85,500）</b><span>当前余额：上传对账单后读取</span></div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px">
+  <div class="mockup-header">计划表中的宽基两行</div>
+  <div class="mockup-body" style="padding:16px;background:#f8faf9;display:grid;gap:8px;font-size:13px">
+    <div style="display:flex;align-items:center;gap:12px;background:#e6f3ee;border-left:7px solid #1f8a70;border-radius:8px;padding:13px"><b style="width:110px;color:#14634f">A500</b><span>独立6笔计划</span><span style="margin-left:auto">已完成：按真实成交记录</span></div>
+    <div style="display:flex;align-items:center;gap:12px;background:#eaf1fb;border-left:7px solid #3c78c8;border-radius:8px;padding:13px"><b style="width:110px;color:#285995">沪深300</b><span>独立6笔计划</span><span style="margin-left:auto">已完成：按真实成交记录</span></div>
+    <p style="margin:5px 0 0;color:#667085">两只都属于宽基，但计划进度、实际持仓和实时缺口完全分开。</p>
+  </div>
+</div>

@@ -8,17 +8,24 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+import sys as _sys
+# Streamlit re-uses sys.modules across re-runs; evict our project modules
+# so they're re-read from disk when imported below.
+for _mod in ("dashboard", "instruments", "data",
+             "indicators", "etf_shares", "sector_rs"):
+    _sys.modules.pop(_mod, None)
+del _sys, _mod
 from backtest import run_campaign_backtest, simulate_campaigns
 from chart import build_figure, resolve_chart_start
 from dashboard import (
     _reminders,
-    build_campaign_observation,
     build_market_analysis,
+    build_market_state,
     compute_indicators,
 )
-from data import load_data
+from data import classify_cn_security, load_data
 from financial_report_check import build_financial_report_check
-from instruments import get_instrument, list_instruments
+from instruments import get_instrument, list_instruments, resolve_instrument
 from journal import create_entry, list_entries, review
 from mobile_view import (
     MobileViewConfigError,
@@ -30,6 +37,7 @@ from mobile_view import (
     primary_metric_order,
 )
 from policy.page import render_policy_strategy
+from sector_rs import render_sector_rs
 from portfolio_review import (
     ACCOUNT_BASE_AMOUNT,
     ATTRIBUTION_START,
@@ -112,7 +120,7 @@ except MobileViewConfigError as exc:
 
 @st.cache_data(ttl=300, show_spinner=False)
 def load_prepared_data(symbol: str, refresh_token: int) -> pd.DataFrame:
-    spec = get_instrument(symbol)
+    spec = resolve_instrument(symbol)
     return compute_indicators(load_data(symbol=symbol, force_refresh=refresh_token > 0), spec)
 
 
@@ -154,41 +162,10 @@ def _render_main(
 ) -> None:
     latest = df.iloc[-1]
     analysis = build_market_analysis(df)
-    campaign = build_campaign_observation(df, spec)
     st.title(spec.name)
     st.caption(_data_caption(df))
     if df.attrs.get("data_note"):
         st.caption(f"数据说明：{df.attrs['data_note']}")
-
-    metric_columns = dict(zip(primary_metric_order(read_only), st.columns(4)))
-    with metric_columns["rsi"]:
-        st.metric("RSI (14)", _fmt_number(latest.get("rsi"), 0))
-    with metric_columns["price"]:
-        st.metric("收盘", _fmt_number(latest["close"], 4), _fmt_number(latest.get("chg"), 1, "—") + "%")
-    with metric_columns["macd"]:
-        hist_col = next((c for c in df.columns if c.startswith("MACDh_")), "")
-        st.metric("MACD HIST", _fmt_number(latest.get(hist_col), 4))
-    with metric_columns["rvol"]:
-        st.metric("成交额 RVOL", _fmt_number(latest.get("rvol"), 2, "不可用"))
-
-    st.markdown(
-        f"<div class='status-card'><b>{analysis['state_label']}</b><br>{analysis['one_liner']}</div>",
-        unsafe_allow_html=True,
-    )
-
-    left, right = st.columns([3, 2])
-    with left:
-        st.subheader("下一步观察")
-        for item in analysis["next_watch"][:3]:
-            st.write(f"• {item}")
-    with right:
-        st.subheader("战役状态")
-        if campaign is None:
-            st.caption("实验观察区：不提供策略战役判断。")
-        else:
-            st.write(f"**{campaign['phase']}**")
-            st.caption(campaign["summary"])
-            st.caption(" · ".join(f"{'✓' if item['ok'] else '○'} {item['label']}" for item in campaign["conditions"]))
 
     if SHARE_OBSERVATION_ENABLED and spec.is_core:
         trading_dates = tuple(df.index[-25:].strftime("%Y-%m-%d"))
@@ -232,11 +209,39 @@ def _render_main(
                 f"{share_observation['source']} · 数据日 {latest_share_date} · {freshness}{lag_note}"
             )
 
+    # ── MA150 长期趋势 ──
+    market_state = build_market_state(df, instrument=spec)
+    ma150_dir = market_state.get("ma150_direction", "—")
+    ma150_color = {"向上": "#27ae60", "向下": "#e74c3c", "走平": "#95a5a6"}.get(ma150_dir, "#95a5a6")
+    ma150_icon = {"向上": "↗", "向下": "↘", "走平": "→"}.get(ma150_dir, "")
+    st.markdown(
+        f"### MA150（30 周线）"
+        f"<span style='color:{ma150_color};font-size:1.1em'> {ma150_icon} {ma150_dir}</span>",
+        unsafe_allow_html=True,
+    )
+    st.caption("Weinstein 长期趋势判定——向上则只做多不做空，向下则只做空不做多，走平则观望。")
+
     st.subheader("图表")
     range_label = st.radio("图表区间", ["近 6 个月", "近 1 年", "近 2 年", "从诞生至今"], horizontal=True, label_visibility="collapsed")
     start_date = resolve_chart_start(df.index, range_label)
     fig = build_figure(df, symbol=spec.symbol, name=spec.name, start_date=start_date, end_date=df.index[-1], trades=trades)
     st.pyplot(fig, clear_figure=True)
+
+    metric_columns = dict(zip(primary_metric_order(read_only), st.columns(4)))
+    with metric_columns["rsi"]:
+        st.metric("RSI (14)", _fmt_number(latest.get("rsi"), 0))
+    with metric_columns["price"]:
+        st.metric("收盘", _fmt_number(latest["close"], 4), _fmt_number(latest.get("chg"), 1, "—") + "%")
+    with metric_columns["macd"]:
+        hist_col = next((c for c in df.columns if c.startswith("MACDh_")), "")
+        st.metric("MACD HIST", _fmt_number(latest.get(hist_col), 4))
+    with metric_columns["rvol"]:
+        st.metric("成交额 RVOL", _fmt_number(latest.get("rvol"), 2, "不可用"))
+
+    st.markdown(
+        f"<div class='status-card'><b>{analysis['state_label']}</b><br>{analysis['one_liner']}</div>",
+        unsafe_allow_html=True,
+    )
 
     with st.expander("查看详细观察与数据说明"):
         for index, (name, state, note) in enumerate(analysis["steps"], start=1):
@@ -787,9 +792,33 @@ if "refresh_token" not in st.session_state:
 
 specs = list_instruments(include_experimental=True)
 spec_by_symbol = {spec.symbol: spec for spec in specs}
+if "active_symbol" not in st.session_state:
+    st.session_state.active_symbol = next(iter(spec_by_symbol))
 with st.sidebar:
     st.markdown("## 决策辅助")
-    symbol = st.selectbox("标的", list(spec_by_symbol), format_func=lambda key: f"{spec_by_symbol[key].display_tier} · {spec_by_symbol[key].name}")
+    symbol_options = list(spec_by_symbol)
+    with st.form("symbol-search"):
+        custom_code = st.text_input("输入股票 / ETF 代码", placeholder="例如 600887 或 561380").strip().upper()
+        quick_symbol = st.selectbox(
+            "或选已有标的",
+            ["—"] + symbol_options,
+            format_func=lambda key: "—" if key == "—" else f"{spec_by_symbol[key].display_tier} · {spec_by_symbol[key].name}",
+        )
+        submitted = st.form_submit_button("查看图表")
+    if submitted:
+        candidate = custom_code or quick_symbol
+        try:
+            if candidate == "—":
+                raise ValueError("请输入代码，或选择一个已有标的")
+            if candidate not in spec_by_symbol:
+                classify_cn_security(candidate)
+            st.session_state.active_symbol = candidate
+            st.session_state.pop("symbol_search_error", None)
+        except ValueError as exc:
+            st.session_state.symbol_search_error = str(exc)
+    if st.session_state.get("symbol_search_error"):
+        st.error(st.session_state.symbol_search_error)
+    symbol = st.session_state.active_symbol
     page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
     if st.button("刷新当前数据"):
         st.session_state.refresh_token += 1
@@ -805,9 +834,13 @@ with st.sidebar:
     else:
         st.caption("手机只读模式 · 不上传对账单，不修改计划")
 
-spec = spec_by_symbol[symbol]
+spec = resolve_instrument(symbol)
 if page == "战略方向":
     render_policy_strategy()
+    st.stop()
+
+if page == "产业RS排名":
+    render_sector_rs()
     st.stop()
 
 trade_cache = {}

@@ -1,0 +1,12 @@
+"""Verify HK price history data."""
+import sys
+sys.path.insert(0, r'C:\Users\admin\Desktop\etf量化工具')
+import breadth
+
+for code in ['HSI', 'HSTECH']:
+    hist = breadth.load_price_history(code)
+    print(f'{code}: {hist.shape[0]} days, {hist.shape[1]} columns')
+    if not hist.empty:
+        print(f'  Date range: {hist.index[0].strftime("%Y-%m-%d")} to {hist.index[-1].strftime("%Y-%m-%d")}')
+        cols_with_data = sum(1 for c in hist.columns if hist[c].dropna().shape[0] >= 21)
+        print(f'  Columns with 21+ days: {cols_with_data}/{hist.shape[1]}')

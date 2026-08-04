@@ -1,0 +1,64 @@
+"""修复拆分处理：还原 CSV 中被误改的数据，让 data.py 的 normalize 函数统一处理"""
+import pandas as pd, os, sys, numpy as np
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache")
+
+# _fix_splits.py 使用的比率（用于还原）
+FIX_RATIOS = {
+    "561380": ("2026-06-25", 2.373 / 0.961),   # ~2.47
+    "159663": ("2026-07-07", 2.544 / 1.252),   # ~2.03
+    "159995": ("2026-07-07", 3.009 / 1.501),   # ~2.00
+    "516090": ("2021-11-29", 1.727 / 0.889),   # ~1.94
+}
+
+PRICE_COLS = ["open", "high", "low", "close"]
+
+for code, (split_date, ratio) in FIX_RATIOS.items():
+    path = os.path.join(CACHE, f"{code}.csv")
+    if not os.path.exists(path):
+        print(f"{code}: 缓存不存在，跳过")
+        continue
+
+    df = pd.read_csv(path)
+    date_col = "date" if "date" in df.columns else "日期"
+    df[date_col] = pd.to_datetime(df[date_col])
+    df = df.sort_values(date_col)
+
+    split_dt = pd.Timestamp(split_date)
+    mask = df[date_col] < split_dt
+    before_count = mask.sum()
+    if before_count == 0:
+        print(f"{code}: {split_date} 前无数据，跳过")
+        continue
+
+    # 还原：乘以 ratio（撤销 _fix_splits.py 的除法）
+    for col in PRICE_COLS:
+        if col in df.columns:
+            df.loc[mask, col] = df.loc[mask, col] * ratio
+
+    # 还原成交量：除以 ratio（撤销 _fix_splits.py 的乘法）
+    vol_col = None
+    for c in ["volume", "成交量"]:
+        if c in df.columns:
+            vol_col = c
+            break
+    if vol_col:
+        df.loc[mask, vol_col] = (df.loc[mask, vol_col] / ratio).round().astype(np.int64)
+
+    # 保存还原后的数据
+    df.to_csv(path, index=False, float_format="%.4f")
+
+    # 验证
+    post_mask = df[date_col] >= split_dt
+    pre_last = df[mask]["close"].iloc[-1] if mask.any() else None
+    post_first = df[post_mask]["close"].iloc[0] if post_mask.any() else None
+    ratio_check = post_first / pre_last if pre_last and post_first else None
+    print(f"{code}: {split_date} 前 {before_count} 行已还原 "
+          f"(ratio={ratio:.4f}, 验证跳变={ratio_check:.4f}, 期望不连续={ratio_check != 1.0 if ratio_check else '?'})")
+    if pre_last is not None and post_first is not None:
+        print(f"  拆分前最后一笔 close={pre_last:.4f}, 拆分后第一笔 close={post_first:.4f}")
+
+print("\n完成还原。")
+print("注意：还原后的 CSV 拆分处有价格跳变，这是正确的——")
+print("data.py 的 normalize_known_corporate_actions 会在每次加载时自动做前复权。")

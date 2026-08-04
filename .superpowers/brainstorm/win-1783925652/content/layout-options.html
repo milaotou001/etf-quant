@@ -1,0 +1,71 @@
+<h2>半年买入计划：你更喜欢哪种页面结构？</h2>
+<p class="subtitle">三种方案都支持“计划中 → 已买入待对账 → 已对账”，区别在于你打开页面时先看到什么。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f7faf8;min-height:360px">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div style="flex:1;background:white;border:1px solid #d8e5df;border-radius:8px;padding:10px"><small>半年总计划</small><br><b>¥90,315</b></div>
+        <div style="flex:1;background:white;border:1px solid #d8e5df;border-radius:8px;padding:10px"><small>已完成</small><br><b style="color:#177a5b">¥2,500</b></div>
+        <div style="flex:1;background:white;border:1px solid #d8e5df;border-radius:8px;padding:10px"><small>剩余</small><br><b>¥87,815</b></div>
+      </div>
+      <div style="background:white;border:1px solid #d8e5df;border-radius:8px;padding:12px;margin-bottom:10px">
+        <b>宽基 ETF</b>　<span style="color:#667085">第一轮 · 第1/3笔</span>
+        <div style="height:7px;background:#e8efec;border-radius:5px;margin:8px 0"><div style="width:17%;height:100%;background:#2b8a6e;border-radius:5px"></div></div>
+        <div style="font-size:12px;border-top:1px solid #eee;padding-top:7px">A500　¥3,750　<span style="color:#aa6b00">计划中</span>　　沪深300　¥3,750　<span style="color:#aa6b00">计划中</span></div>
+      </div>
+      <div style="background:white;border:1px solid #d8e5df;border-radius:8px;padding:12px;margin-bottom:10px">
+        <b>科创50</b>　<span style="color:#667085">两轮共6笔 · ¥15,315</span>
+        <div style="font-size:12px;margin-top:8px">下一笔 ¥2,552.50　<span style="color:#aa6b00">等待低位条件</span></div>
+      </div>
+      <div style="background:white;border:1px solid #d8e5df;border-radius:8px;padding:12px">
+        <b>黄金</b>　<span style="color:#667085">每周五 · 共12笔</span>
+        <div style="font-size:12px;margin-top:8px">7/10 ¥2,500　<span style="color:#177a5b">已买入·待对账</span><br>7/17 ¥2,500　<span style="color:#aa6b00">计划中</span></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A　总览 + 分组计划（推荐）</h3>
+      <p>先看总预算和完成度，再按宽基、科创、黄金展开每笔记录。最适合日常快速确认。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f8fb;min-height:360px">
+      <div style="background:white;border:1px solid #ddd;border-radius:8px;padding:12px">
+        <b>未来买入时间线</b>
+        <div style="border-left:2px solid #8476d1;margin:14px 0 0 8px;padding-left:16px;font-size:12px">
+          <div style="margin-bottom:18px"><b>7月10日</b><br><span style="color:#177a5b">● 黄金 ¥2,500 · 已买入</span></div>
+          <div style="margin-bottom:18px"><b>7月13日</b><br>○ A500 ¥3,750<br>○ 沪深300 ¥3,750</div>
+          <div style="margin-bottom:18px"><b>7月17日</b><br>○ 黄金 ¥2,500</div>
+          <div style="margin-bottom:18px"><b>等待条件</b><br>○ 科创50 第1笔 ¥2,552.50</div>
+          <div style="margin-bottom:10px"><b>7月24日</b><br>○ 黄金 ¥2,500</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B　时间线</h3>
+      <p>按日期查看下一笔行动，黄金周投很直观；但A500、沪深300、科创没有固定日期时会显得零散。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#fafafa;min-height:360px;overflow:hidden">
+      <div style="background:white;border:1px solid #ddd;border-radius:6px;padding:10px;font-size:11px">
+        <b>全部计划明细</b>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;margin-top:10px;font-weight:bold;background:#f1f3f5;padding:7px"><span>标的/批次</span><span>计划</span><span>实际</span><span>状态</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px;border-bottom:1px solid #eee"><span>黄金 1/12</span><span>2500</span><span>—</span><span style="color:#177a5b">待对账</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px;border-bottom:1px solid #eee"><span>A500 1/6</span><span>3750</span><span>—</span><span>计划中</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px;border-bottom:1px solid #eee"><span>沪深300 1/6</span><span>3750</span><span>—</span><span>计划中</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px;border-bottom:1px solid #eee"><span>科创50 1/6</span><span>2552.5</span><span>—</span><span>计划中</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px;border-bottom:1px solid #eee"><span>黄金 2/12</span><span>2500</span><span>—</span><span>计划中</span></div>
+        <div style="display:grid;grid-template-columns:1.2fr .7fr .7fr 1fr;gap:5px;padding:7px"><span>……</span><span>……</span><span>……</span><span>……</span></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C　单张大表</h3>
+      <p>信息最完整、像电子表格，适合核账；但打开页面时文字较多，不符合你之前希望减少信息密度的方向。</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:18px">点击一张方案卡片选择。也可以直接回到对话里告诉我：喜欢哪一版、哪些地方需要组合。</p>

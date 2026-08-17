@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from datetime import date
 
 import pandas as pd
 
@@ -8,10 +9,16 @@ import pandas as pd
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
-from data import attach_data_quality, normalize_known_corporate_actions
+from data import attach_data_quality, is_data_too_stale, normalize_known_corporate_actions
 
 
 class DataQualityTests(unittest.TestCase):
+    def test_friday_quote_is_accepted_on_following_monday(self):
+        self.assertFalse(is_data_too_stale(date(2026, 8, 14), date(2026, 8, 17)))
+
+    def test_friday_quote_is_rejected_after_more_than_one_business_day(self):
+        self.assertTrue(is_data_too_stale(date(2026, 8, 14), date(2026, 8, 18)))
+
     def test_159995_one_to_two_split_adjusts_pre_split_prices(self):
         frame = pd.DataFrame(
             {

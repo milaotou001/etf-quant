@@ -243,6 +243,17 @@ def _has_amount(df: pd.DataFrame) -> bool:
     return "amount" in df.columns and not df["amount"].dropna().empty
 
 
+def is_data_too_stale(last_date, today=None) -> bool:
+    """允许行情源最多落后一个工作日，避免周末后的周五数据被误判过期。"""
+    last_trading_date = pd.Timestamp(last_date).date()
+    current_date = today or datetime.now().date()
+    business_days_elapsed = max(
+        len(pd.bdate_range(last_trading_date, current_date)) - 1,
+        0,
+    )
+    return business_days_elapsed > 1
+
+
 def _cache_is_stale(cached_df: pd.DataFrame | None) -> bool:
     """缓存数据的最新日期是否早于今天（周末则对比周五）。"""
     if cached_df is None or cached_df.empty:
@@ -346,8 +357,8 @@ def _load_cn_etf(symbol: str, force_refresh: bool = False) -> pd.DataFrame:
                 last_date = last_date.date()
             else:
                 last_date = pd.Timestamp(last_date).date()
-            # 跳过超过 1 天的陈旧数据
-            if (today - last_date).days > 1:
+            # 允许行情源最多落后一个工作日，避免周末后误拒绝周五行情。
+            if is_data_too_stale(last_date, today):
                 raise ValueError(f"数据不够新（最新{last_date}），尝试下一数据源")
             amount_verified = source_name in {"东方财富", "新浪"}
             note = "" if amount_verified else "成交额由成交量和均价估算，不用于正式 RVOL 判断"
@@ -410,7 +421,7 @@ def _load_ashare(symbol: str, force_refresh: bool = False) -> pd.DataFrame:
             if df.empty:
                 raise ValueError("返回空数据")
             last_date = pd.Timestamp(df.index[-1]).date()
-            if (today - last_date).days > 1:
+            if is_data_too_stale(last_date, today):
                 raise ValueError(f"数据不够新（最新{last_date}）")
             note = "" if amount_verified else "成交额由成交量和均价估算，不用于正式 RVOL 判断"
             attach_data_quality(df, source_name, amount_verified, "current", note)

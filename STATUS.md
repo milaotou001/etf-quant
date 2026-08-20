@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-08-20：在隔离分支 `codex/shared-instrument-directory` 实现电脑与手机统一的标的目录管理，待最终合并发布。新增受 Git 跟踪的 `mobile/instrument_directory.json`（只含自定义观察与隐藏状态）和 GitHub Contents API 安全读写层；电脑和已输入会话管理口令的手机均可在单标的图表页加入/删除，在“管理目录”页恢复隐藏标的或恢复默认目录。删除只隐藏，不影响策略、行情、交易或计划；新增项默认不进入核心策略、回测或买入计划。令牌与口令只从本地/Streamlit Cloud Secret 读取，不写入仓库；配置步骤见 `docs/手机标的目录同步配置.md`。独立审查后已补上“全部隐藏仍可恢复”“搜索隐藏项可直接恢复”及“空目录不阻断计划/策略页”的边界，最终复核无 Critical/Important 问题；定向 47 项测试、完整 Streamlit `AppTest` 启动检查和语法检查通过；完整测试套件仍保留 5 项既有 `test_purchase_plan` 金额/轮次断言失败。
+- 2026-08-20：电脑与手机统一标的目录管理已合并并推送 GitHub `master`（`f747837`），Streamlit Community Cloud 将自动部署。新增受 Git 跟踪的 `mobile/instrument_directory.json`（只含自定义观察与隐藏状态）和 GitHub Contents API 安全读写层；电脑和已输入会话管理口令的手机均可在单标的图表页加入/删除，在“管理目录”页恢复隐藏标的或恢复默认目录。删除只隐藏，不影响策略、行情、交易或计划；新增项默认不进入核心策略、回测或买入计划。令牌与口令只从本地/Streamlit Cloud Secret 读取，不写入仓库；配置步骤见 `docs/手机标的目录同步配置.md`。独立审查后已补上“全部隐藏仍可恢复”“搜索隐藏项可直接恢复”及“空目录不阻断计划/策略页”的边界，最终复核无 Critical/Important 问题；定向 47 项测试、完整 Streamlit `AppTest` 启动检查和语法检查通过；完整测试套件仍保留 5 项既有 `test_purchase_plan` 金额/轮次断言失败。
 
 - 2026-08-20：修复手机端“全部图表”发布后启动错误。根因是 Streamlit 热更新会复用已加载模块，而 `app.py` 的模块清单漏掉了 `mobile_view`；新版本导入 `ALL_CHARTS_PAGE` 时会命中旧模块并失败。现已将 `mobile_view` 纳入导入前清理清单，并增加回归测试；不改变数据、交易或页面功能。
 

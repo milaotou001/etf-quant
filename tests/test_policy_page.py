@@ -77,7 +77,14 @@ class PolicyPageTests(unittest.TestCase):
 
         self.assertEqual(
             FULL_PAGE_OPTIONS,
-            ["状态与图表", "复盘日志", "半年买入计划", "组合复盘", "战略方向"],
+            [
+                "状态与图表",
+                "复盘日志",
+                "半年买入计划",
+                "组合复盘",
+                "战略方向",
+                "产业RS排名",
+            ],
         )
         self.assertIn("mobile_page_options(MOBILE_READ_ONLY)", source)
         self.assertIn('if page == "战略方向":', source)

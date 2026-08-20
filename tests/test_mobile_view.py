@@ -9,6 +9,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
 from mobile_view import (
+    ALL_CHARTS_PAGE,
     MobileViewConfigError,
     encode_plan_snapshot,
     encode_trade_snapshot,
@@ -37,13 +38,18 @@ class MobileViewTests(unittest.TestCase):
                 "半年买入计划",
                 "组合复盘",
                 "战略方向",
+                "产业RS排名",
             ],
         )
+        self.assertNotIn(ALL_CHARTS_PAGE, mobile_page_options(False))
         self.assertEqual(primary_metric_order(False), ["price", "rsi", "macd", "rvol"])
 
-    def test_cloud_mode_has_only_market_and_plan_and_prioritizes_rsi(self):
+    def test_cloud_mode_adds_all_charts_and_prioritizes_rsi(self):
         self.assertTrue(is_mobile_read_only({"MOBILE_READ_ONLY": "true"}))
-        self.assertEqual(mobile_page_options(True), ["状态与图表", "半年买入计划"])
+        self.assertEqual(
+            mobile_page_options(True),
+            ["状态与图表", ALL_CHARTS_PAGE, "半年买入计划", "产业RS排名"],
+        )
         self.assertEqual(primary_metric_order(True), ["rsi", "price", "macd", "rvol"])
 
     def test_invalid_mode_value_fails_closed(self):

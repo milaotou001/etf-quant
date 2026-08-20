@@ -100,14 +100,15 @@ def normalize_directory_state(value: object) -> dict:
     }
 
 
-def add_custom_instrument(state: object, symbol: object) -> dict:
-    """Append a generic observation instrument once, preserving directory order."""
+def add_custom_instrument(state: object, symbol: object, name: object | None = None) -> dict:
+    """Append a named observation instrument once, preserving directory order."""
     normalized = normalize_directory_state(state)
     custom_symbol = _normalize_symbol(symbol)
+    custom_name = str(name or custom_symbol).strip() or custom_symbol
     if any(entry["symbol"] == custom_symbol for entry in normalized["custom_instruments"]):
         return normalized
     normalized["custom_instruments"].append(
-        {"symbol": custom_symbol, "name": f"{custom_symbol} · 自定义观察", "market": "CN", "category": "自定义"}
+        {"symbol": custom_symbol, "name": custom_name, "market": "CN", "category": "自定义"}
     )
     return normalized
 

@@ -19,7 +19,8 @@ FULL_PAGE_OPTIONS = [
     "战略方向",
     "产业RS排名",
 ]
-READ_ONLY_PAGE_OPTIONS = ["状态与图表", "半年买入计划", "产业RS排名"]
+ALL_CHARTS_PAGE = "全部图表"
+READ_ONLY_PAGE_OPTIONS = ["状态与图表", ALL_CHARTS_PAGE, "半年买入计划", "产业RS排名"]
 TRADE_SNAPSHOT_VERSION = 1
 TRADE_TYPES = {"buy", "sell_profit", "sell_loss"}
 

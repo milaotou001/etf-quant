@@ -13,6 +13,27 @@ import data
 
 
 class CustomSymbolSearchTests(unittest.TestCase):
+    def setUp(self):
+        lookup = getattr(data, "lookup_cn_security_name", None)
+        if lookup is not None:
+            lookup.cache_clear()
+
+    @patch("data.ak.fund_etf_spot_em")
+    def test_looks_up_etf_name(self, spot):
+        spot.return_value = pd.DataFrame({"代码": ["512880"], "名称": ["证券ETF"]})
+
+        self.assertEqual(data.lookup_cn_security_name("512880"), "证券ETF")
+
+    @patch("data.ak.stock_individual_info_em")
+    def test_looks_up_a_share_name(self, info):
+        info.return_value = pd.DataFrame({"item": ["股票简称"], "value": ["伊利股份"]})
+
+        self.assertEqual(data.lookup_cn_security_name("600887"), "伊利股份")
+
+    @patch("data.ak.fund_etf_spot_em", side_effect=RuntimeError("offline"))
+    def test_name_lookup_falls_back_to_code_when_data_source_is_unavailable(self, spot):
+        self.assertEqual(data.lookup_cn_security_name("512880"), "512880")
+
     def test_classifies_supported_etf_codes(self):
         self.assertEqual(data.classify_cn_security("561380"), "etf")
         self.assertEqual(data.classify_cn_security("159570"), "etf")

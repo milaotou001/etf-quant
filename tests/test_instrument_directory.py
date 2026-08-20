@@ -26,19 +26,20 @@ class InstrumentDirectoryStateTests(unittest.TestCase):
             {"version": 1, "custom_instruments": [], "hidden_symbols": []},
         )
 
-    def test_custom_observation_is_added_once_and_not_a_strategy_instrument(self):
+    def test_custom_observation_preserves_resolved_name_and_not_a_strategy_instrument(self):
         from instrument_directory import add_custom_instrument
 
         state = add_custom_instrument(
             {"version": 1, "custom_instruments": [], "hidden_symbols": []},
             "600887",
+            "伊利股份",
         )
 
         self.assertEqual(
             state["custom_instruments"],
-            [{"symbol": "600887", "name": "600887 · 自定义观察", "market": "CN", "category": "自定义"}],
+            [{"symbol": "600887", "name": "伊利股份", "market": "CN", "category": "自定义"}],
         )
-        self.assertEqual(add_custom_instrument(state, "600887"), state)
+        self.assertEqual(add_custom_instrument(state, "600887", "别的名字"), state)
 
     def test_hiding_and_restoring_are_reversible(self):
         from instrument_directory import hide_instrument, restore_instrument

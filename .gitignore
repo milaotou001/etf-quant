@@ -15,6 +15,7 @@ private_data/
 yfinance.cache
 普通账户电子对账单.xlsx
 .streamlit/secrets.toml
+.worktrees/
 tmp/
 恒生/
 科技/

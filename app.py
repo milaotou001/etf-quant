@@ -1,4 +1,5 @@
 """本地 ETF 决策辅助：主页面只保留状态与图表，其余内容按需查看。"""
+from dataclasses import replace
 from datetime import date
 import hashlib
 import html
@@ -24,7 +25,7 @@ from dashboard import (
     build_market_state,
     compute_indicators,
 )
-from data import classify_cn_security, load_data
+from data import classify_cn_security, load_data, lookup_cn_security_name
 from financial_report_check import build_financial_report_check
 from instrument_directory import (
     DirectoryRemoteError,
@@ -167,6 +168,7 @@ def _save_directory_change(
     store: GitHubDirectoryStore,
     state: dict,
     message: str,
+    notice: str | None = None,
 ) -> None:
     if snapshot is None:
         st.error("共享目录暂不可写入；请检查网络后刷新页面重试。")
@@ -176,8 +178,15 @@ def _save_directory_change(
     except DirectoryRemoteError as exc:
         st.error(f"目录同步失败：{exc}")
         return
-    st.session_state.directory_notice = "目录已同步；另一端刷新页面即可看到更新。"
+    st.session_state.directory_notice = notice or "目录已同步；另一端刷新页面即可看到更新。"
     st.rerun()
+
+
+def _custom_display_name(spec) -> str:
+    """Keep custom observations recognizable without changing their strategy tier."""
+    if spec.category == "自定义" and spec.name != spec.symbol:
+        return f"{spec.name}（{spec.symbol}）"
+    return spec.name
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -240,7 +249,7 @@ def _render_all_chart_card(df: pd.DataFrame, spec, range_label: str) -> None:
         fig = build_figure(
             df,
             symbol=spec.symbol,
-            name=spec.name,
+            name=_custom_display_name(spec),
             start_date=start_date,
             end_date=df.index[-1],
             trades=None,
@@ -266,7 +275,7 @@ def _render_all_charts(specs, refresh_token: int) -> None:
 
     for position, chart_spec in enumerate(specs, start=1):
         with st.container(border=True):
-            st.subheader(f"{chart_spec.display_tier} · {chart_spec.name}")
+            st.subheader(f"{chart_spec.display_tier} · {_custom_display_name(chart_spec)}")
             try:
                 chart_df = load_prepared_data(chart_spec.symbol, refresh_token)
                 _render_all_chart_card(chart_df, chart_spec, range_label)
@@ -278,7 +287,7 @@ def _render_all_charts(specs, refresh_token: int) -> None:
 
 
 def _render_directory_actions(
-    symbol: str,
+    spec,
     visible_symbols: set[str],
     directory_state: dict,
     directory_snapshot: DirectorySnapshot | None,
@@ -286,6 +295,7 @@ def _render_directory_actions(
     can_manage: bool,
 ) -> None:
     """Render add/delete controls inside a single-instrument chart page."""
+    symbol = spec.symbol
     st.divider()
     st.subheader("标的目录")
     if not can_manage:
@@ -305,17 +315,20 @@ def _render_directory_actions(
                 )
             st.caption("该标的已从目录隐藏；恢复后会重新出现在已有标的和全部图表中。")
             return
+        entry_name = st.text_input("标的名称", value=spec.name, key=f"directory-name-{symbol}").strip()
         if st.button("加入标的", key=f"directory-add-{symbol}"):
             try:
-                updated = add_custom_instrument(directory_state, symbol)
+                updated = add_custom_instrument(directory_state, symbol, entry_name)
             except ValueError as exc:
                 st.warning(str(exc))
             else:
+                saved_name = entry_name or symbol
                 _save_directory_change(
                     directory_snapshot,
                     directory_store,
                     updated,
                     f"directory: add {symbol}",
+                    notice=f"已加入：{saved_name}（{symbol}）" if saved_name != symbol else f"已加入：{symbol}",
                 )
         st.caption("加入后作为“自定义观察”显示，不进入买入计划、核心策略或回测。")
         return
@@ -352,7 +365,8 @@ def _directory_label(symbol: str, directory_state: dict) -> str:
     try:
         return get_instrument(symbol).name
     except ValueError:
-        return custom_names.get(symbol, f"{symbol} · 自定义观察")
+        name = custom_names.get(symbol, symbol)
+        return f"{name}（{symbol}）" if name != symbol else symbol
 
 
 def _render_directory_manager(
@@ -431,7 +445,7 @@ def _render_main(
 ) -> None:
     latest = df.iloc[-1]
     analysis = build_market_analysis(df)
-    st.title(spec.name)
+    st.title(_custom_display_name(spec))
     st.caption(_data_caption(df))
     if df.attrs.get("data_note"):
         st.caption(f"数据说明：{df.attrs['data_note']}")
@@ -493,7 +507,7 @@ def _render_main(
     st.subheader("图表")
     range_label = st.radio("图表区间", CHART_RANGE_OPTIONS, horizontal=True, label_visibility="collapsed")
     start_date = resolve_chart_start(df.index, range_label)
-    fig = build_figure(df, symbol=spec.symbol, name=spec.name, start_date=start_date, end_date=df.index[-1], trades=trades)
+    fig = build_figure(df, symbol=spec.symbol, name=_custom_display_name(spec), start_date=start_date, end_date=df.index[-1], trades=trades)
     st.pyplot(fig, clear_figure=True)
 
     metric_columns = dict(zip(primary_metric_order(read_only), st.columns(4)))
@@ -525,7 +539,7 @@ def _render_main(
 
     if directory_state is not None and directory_store is not None and visible_symbols is not None:
         _render_directory_actions(
-            spec.symbol,
+            spec,
             visible_symbols,
             directory_state,
             directory_snapshot,
@@ -1088,7 +1102,7 @@ with st.sidebar:
         quick_symbol = st.selectbox(
             "或选已有标的",
             ["—"] + symbol_options,
-            format_func=lambda key: "—" if key == "—" else f"{spec_by_symbol[key].display_tier} · {spec_by_symbol[key].name}",
+            format_func=lambda key: "—" if key == "—" else f"{spec_by_symbol[key].display_tier} · {_custom_display_name(spec_by_symbol[key])}",
         )
         submitted = st.form_submit_button("查看图表")
     if submitted:
@@ -1098,6 +1112,9 @@ with st.sidebar:
                 raise ValueError("请输入代码，或选择一个已有标的")
             if candidate not in spec_by_symbol:
                 classify_cn_security(candidate)
+                st.session_state.active_custom_name = lookup_cn_security_name(candidate)
+            else:
+                st.session_state.pop("active_custom_name", None)
             st.session_state.active_symbol = candidate
             st.session_state.pop("symbol_search_error", None)
         except ValueError as exc:
@@ -1174,7 +1191,10 @@ if MOBILE_READ_ONLY and page == ALL_CHARTS_PAGE:
     _render_all_charts(specs, st.session_state.refresh_token)
     st.stop()
 
-spec = resolve_instrument(symbol)
+spec = spec_by_symbol.get(symbol, resolve_instrument(symbol))
+if spec.category == "自定义" and symbol not in spec_by_symbol:
+    custom_name = str(st.session_state.get("active_custom_name", symbol)).strip() or symbol
+    spec = replace(spec, name=custom_name)
 
 trade_cache = {}
 if MOBILE_READ_ONLY:

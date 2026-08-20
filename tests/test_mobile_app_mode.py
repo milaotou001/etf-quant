@@ -80,6 +80,12 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn('st.form_submit_button("查看图表")', self.source)
         self.assertIn("classify_cn_security(candidate)", self.source)
 
+    def test_custom_symbol_ui_uses_name_and_explicit_directory_success_notice(self):
+        self.assertIn("lookup_cn_security_name(candidate)", self.source)
+        self.assertIn('st.text_input("标的名称"', self.source)
+        self.assertIn("已加入：", self.source)
+        self.assertIn("_custom_display_name(spec)", self.source)
+
     def test_directory_management_is_available_on_the_chart_page_and_mobile_after_unlock(self):
         self.assertIn("_render_directory_actions(", self.source)
         self.assertIn("directory_management_unlocked", self.source)

@@ -4,6 +4,7 @@ import json
 import time
 import random
 import re
+from functools import lru_cache
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -162,6 +163,26 @@ def classify_cn_security(symbol: str) -> str:
     if code.startswith(ASHARE_PREFIXES) or code.startswith(("4", "8", "92")):
         return "ashare"
     raise ValueError("暂只支持沪深北 A 股和场内 ETF 代码")
+
+
+@lru_cache(maxsize=128)
+def lookup_cn_security_name(symbol: str) -> str:
+    """Resolve a readable Chinese name for a supported code, with a safe code fallback."""
+    code = symbol.strip()
+    try:
+        if classify_cn_security(code) == "etf":
+            table = ak.fund_etf_spot_em()
+            matches = table.loc[table["代码"].astype(str).str.zfill(6) == code, "名称"]
+        else:
+            table = ak.stock_individual_info_em(symbol=code)
+            matches = table.loc[table["item"] == "股票简称", "value"]
+        if not matches.empty:
+            name = str(matches.iloc[0]).strip()
+            if name:
+                return name
+    except Exception:
+        pass
+    return code
 
 
 def _ashare_market_symbol(symbol: str) -> str:

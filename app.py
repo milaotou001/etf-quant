@@ -28,6 +28,7 @@ from financial_report_check import build_financial_report_check
 from instruments import get_instrument, list_instruments, resolve_instrument
 from journal import create_entry, list_entries, review
 from mobile_view import (
+    ALL_CHARTS_PAGE,
     MobileViewConfigError,
     is_mobile_read_only,
     load_mobile_plan,
@@ -153,6 +154,63 @@ def _data_caption(df: pd.DataFrame) -> str:
     return f"数据日 {latest_date} · {source}{origin_note} · {freshness} · {quality}"
 
 
+CHART_RANGE_OPTIONS = ["近 6 个月", "近 1 年", "近 2 年", "从诞生至今"]
+
+
+def _render_all_chart_card(df: pd.DataFrame, spec, range_label: str) -> None:
+    """Render the compact, fact-only chart card used by mobile all-chart browsing."""
+    latest = df.iloc[-1]
+    hist_col = next((column for column in df.columns if column.startswith("MACDh_")), "")
+
+    st.caption(_data_caption(df))
+    rsi, close, macd, rvol = st.columns(4)
+    with rsi:
+        st.metric("RSI (14)", _fmt_number(latest.get("rsi"), 0))
+    with close:
+        st.metric("收盘", _fmt_number(latest["close"], 4))
+    with macd:
+        st.metric("MACD HIST", _fmt_number(latest.get(hist_col), 4))
+    with rvol:
+        st.metric("成交额 RVOL", _fmt_number(latest.get("rvol"), 2, "不可用"))
+
+    start_date = resolve_chart_start(df.index, range_label)
+    fig = build_figure(
+        df,
+        symbol=spec.symbol,
+        name=spec.name,
+        start_date=start_date,
+        end_date=df.index[-1],
+        trades=None,
+    )
+    st.pyplot(fig, clear_figure=True)
+
+
+def _render_all_charts(specs, refresh_token: int) -> None:
+    """Browse every registered instrument without loading private trading state."""
+    st.title("全部已有标的")
+    st.caption(f"按标的目录顺序展示 {len(specs)} 个标的；临时搜索代码只可单独查看。")
+    range_label = st.radio(
+        "图表区间",
+        CHART_RANGE_OPTIONS,
+        index=0,
+        horizontal=True,
+        key="all-chart-range",
+    )
+    progress = st.progress(0, text=f"准备加载 0/{len(specs)} 个标的")
+
+    for position, chart_spec in enumerate(specs, start=1):
+        with st.container(border=True):
+            st.subheader(f"{chart_spec.display_tier} · {chart_spec.name}")
+            try:
+                chart_df = load_prepared_data(chart_spec.symbol, refresh_token)
+            except Exception as exc:
+                st.warning(f"{chart_spec.name} 行情暂不可用：{exc}")
+                progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
+                continue
+            _render_all_chart_card(chart_df, chart_spec, range_label)
+        progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
+
+
 def _render_main(
     df: pd.DataFrame,
     spec,
@@ -222,7 +280,7 @@ def _render_main(
     st.caption("Weinstein 长期趋势判定——向上则只做多不做空，向下则只做空不做多，走平则观望。")
 
     st.subheader("图表")
-    range_label = st.radio("图表区间", ["近 6 个月", "近 1 年", "近 2 年", "从诞生至今"], horizontal=True, label_visibility="collapsed")
+    range_label = st.radio("图表区间", CHART_RANGE_OPTIONS, horizontal=True, label_visibility="collapsed")
     start_date = resolve_chart_start(df.index, range_label)
     fig = build_figure(df, symbol=spec.symbol, name=spec.name, start_date=start_date, end_date=df.index[-1], trades=trades)
     st.pyplot(fig, clear_figure=True)
@@ -819,10 +877,18 @@ with st.sidebar:
     if st.session_state.get("symbol_search_error"):
         st.error(st.session_state.symbol_search_error)
     symbol = st.session_state.active_symbol
-    page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
-    if st.button("刷新当前数据"):
+    if MOBILE_READ_ONLY:
+        if st.button("浏览全部已有标的"):
+            st.session_state.mobile_page = ALL_CHARTS_PAGE
+        page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY), key="mobile_page")
+    else:
+        page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
+    refresh_label = "刷新全部图表数据" if page == ALL_CHARTS_PAGE else "刷新当前数据"
+    if st.button(refresh_label):
         st.session_state.refresh_token += 1
-    show_trades = st.checkbox("显示个人交易记录")
+    show_trades = False
+    if page != ALL_CHARTS_PAGE:
+        show_trades = st.checkbox("显示个人交易记录")
     uploaded_statement = None
     if not MOBILE_READ_ONLY:
         uploaded_statement = st.file_uploader(
@@ -834,7 +900,6 @@ with st.sidebar:
     else:
         st.caption("手机只读模式 · 不上传对账单，不修改计划")
 
-spec = resolve_instrument(symbol)
 if page == "战略方向":
     render_policy_strategy()
     st.stop()
@@ -842,6 +907,12 @@ if page == "战略方向":
 if page == "产业RS排名":
     render_sector_rs()
     st.stop()
+
+if MOBILE_READ_ONLY and page == ALL_CHARTS_PAGE:
+    _render_all_charts(specs, st.session_state.refresh_token)
+    st.stop()
+
+spec = resolve_instrument(symbol)
 
 trade_cache = {}
 if MOBILE_READ_ONLY:

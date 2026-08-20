@@ -80,6 +80,16 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn('st.form_submit_button("查看图表")', self.source)
         self.assertIn("classify_cn_security(candidate)", self.source)
 
+    def test_directory_management_is_available_on_the_chart_page_and_mobile_after_unlock(self):
+        self.assertIn("_render_directory_actions(", self.source)
+        self.assertIn("directory_management_unlocked", self.source)
+        self.assertIn("DIRECTORY_ADMIN_PIN", self.source)
+        self.assertIn('page == DIRECTORY_MANAGEMENT_PAGE', self.source)
+        self.assertIn('"加入标的"', self.source)
+        self.assertIn('"删除标的"', self.source)
+        self.assertIn('"恢复标的"', self.source)
+        self.assertIn("if not spec_by_symbol:", self.source)
+
     def test_all_charts_page_is_a_read_only_navigation_route(self):
         self.assertIn("ALL_CHARTS_PAGE", self.source)
         self.assertIn('st.button("浏览全部已有标的")', self.source)

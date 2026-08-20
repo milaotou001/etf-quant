@@ -10,9 +10,11 @@ sys.path.insert(0, PROJECT_ROOT)
 
 from mobile_view import (
     ALL_CHARTS_PAGE,
+    DIRECTORY_MANAGEMENT_PAGE,
     MobileViewConfigError,
     encode_plan_snapshot,
     encode_trade_snapshot,
+    empty_directory_page,
     is_mobile_read_only,
     load_mobile_plan,
     load_mobile_trades,
@@ -39,6 +41,7 @@ class MobileViewTests(unittest.TestCase):
                 "组合复盘",
                 "战略方向",
                 "产业RS排名",
+                DIRECTORY_MANAGEMENT_PAGE,
             ],
         )
         self.assertNotIn(ALL_CHARTS_PAGE, mobile_page_options(False))
@@ -51,6 +54,23 @@ class MobileViewTests(unittest.TestCase):
             ["状态与图表", ALL_CHARTS_PAGE, "半年买入计划", "产业RS排名"],
         )
         self.assertEqual(primary_metric_order(True), ["rsi", "price", "macd", "rvol"])
+
+    def test_directory_management_is_available_on_desktop_and_only_after_mobile_unlock(self):
+        self.assertIn(DIRECTORY_MANAGEMENT_PAGE, mobile_page_options(True, directory_management_unlocked=True))
+        self.assertNotIn(DIRECTORY_MANAGEMENT_PAGE, mobile_page_options(True))
+        self.assertIn(DIRECTORY_MANAGEMENT_PAGE, mobile_page_options(False, directory_management_unlocked=True))
+
+    def test_empty_directory_routes_to_recovery_page_when_management_is_available(self):
+        self.assertEqual(
+            empty_directory_page("状态与图表", False, directory_management_unlocked=False),
+            DIRECTORY_MANAGEMENT_PAGE,
+        )
+        self.assertEqual(
+            empty_directory_page("复盘日志", True, directory_management_unlocked=True),
+            DIRECTORY_MANAGEMENT_PAGE,
+        )
+        self.assertIsNone(empty_directory_page("半年买入计划", False, directory_management_unlocked=False))
+        self.assertIsNone(empty_directory_page("状态与图表", True, directory_management_unlocked=False))
 
     def test_invalid_mode_value_fails_closed(self):
         with self.assertRaisesRegex(MobileViewConfigError, "MOBILE_READ_ONLY"):

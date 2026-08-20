@@ -11,6 +11,8 @@ from collections.abc import Iterable, Mapping
 from purchase_plan import CURRENT_PLAN_VERSION
 
 
+ALL_CHARTS_PAGE = "全部图表"
+DIRECTORY_MANAGEMENT_PAGE = "管理目录"
 FULL_PAGE_OPTIONS = [
     "状态与图表",
     "复盘日志",
@@ -18,8 +20,8 @@ FULL_PAGE_OPTIONS = [
     "组合复盘",
     "战略方向",
     "产业RS排名",
+    DIRECTORY_MANAGEMENT_PAGE,
 ]
-ALL_CHARTS_PAGE = "全部图表"
 READ_ONLY_PAGE_OPTIONS = ["状态与图表", ALL_CHARTS_PAGE, "半年买入计划", "产业RS排名"]
 TRADE_SNAPSHOT_VERSION = 1
 TRADE_TYPES = {"buy", "sell_profit", "sell_loss"}
@@ -41,8 +43,24 @@ def is_mobile_read_only(env: Mapping[str, object]) -> bool:
     raise MobileViewConfigError("MOBILE_READ_ONLY 必须是 true 或 false")
 
 
-def mobile_page_options(read_only: bool) -> list[str]:
-    return list(READ_ONLY_PAGE_OPTIONS if read_only else FULL_PAGE_OPTIONS)
+def mobile_page_options(read_only: bool, directory_management_unlocked: bool = False) -> list[str]:
+    options = list(READ_ONLY_PAGE_OPTIONS if read_only else FULL_PAGE_OPTIONS)
+    if read_only and directory_management_unlocked:
+        options.append(DIRECTORY_MANAGEMENT_PAGE)
+    return options
+
+
+def empty_directory_page(
+    page: str,
+    read_only: bool,
+    directory_management_unlocked: bool = False,
+) -> str | None:
+    """Route only instrument-dependent pages to recovery when the directory is empty."""
+    if page not in {"状态与图表", "复盘日志"}:
+        return None
+    if not read_only or directory_management_unlocked:
+        return DIRECTORY_MANAGEMENT_PAGE
+    return None
 
 
 def primary_metric_order(read_only: bool) -> list[str]:

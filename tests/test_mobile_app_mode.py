@@ -14,6 +14,9 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn("MOBILE_READ_ONLY = is_mobile_read_only(os.environ)", self.source)
         self.assertIn("mobile_page_options(MOBILE_READ_ONLY)", self.source)
 
+    def test_hot_reload_evicts_mobile_view_before_importing_new_page_constants(self):
+        self.assertIn('"mobile_view"', self.source)
+
     def test_private_controls_are_inside_local_only_branch(self):
         branch = self.source.index("if not MOBILE_READ_ONLY:")
         uploader = self.source.index("st.file_uploader", branch)

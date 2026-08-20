@@ -12,7 +12,7 @@ import streamlit as st
 import sys as _sys
 # Streamlit re-uses sys.modules across re-runs; evict our project modules
 # so they're re-read from disk when imported below.
-for _mod in ("dashboard", "instruments", "data",
+for _mod in ("dashboard", "instruments", "data", "mobile_view",
              "indicators", "etf_shares", "sector_rs"):
     _sys.modules.pop(_mod, None)
 del _sys, _mod

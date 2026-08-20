@@ -12,7 +12,7 @@ import streamlit as st
 import sys as _sys
 # Streamlit re-uses sys.modules across re-runs; evict our project modules
 # so they're re-read from disk when imported below.
-for _mod in ("dashboard", "instruments", "data", "mobile_view",
+for _mod in ("dashboard", "instruments", "instrument_directory", "data", "mobile_view",
              "indicators", "etf_shares", "sector_rs"):
     _sys.modules.pop(_mod, None)
 del _sys, _mod
@@ -26,11 +26,26 @@ from dashboard import (
 )
 from data import classify_cn_security, load_data
 from financial_report_check import build_financial_report_check
+from instrument_directory import (
+    DirectoryRemoteError,
+    DirectorySnapshot,
+    GitHubDirectoryStore,
+    add_custom_instrument,
+    apply_directory_state,
+    directory_admin_pin_matches,
+    empty_directory_state,
+    hide_instrument,
+    normalize_directory_state,
+    reset_directory_state,
+    restore_instrument,
+)
 from instruments import get_instrument, list_instruments, resolve_instrument
 from journal import create_entry, list_entries, review
 from mobile_view import (
     ALL_CHARTS_PAGE,
+    DIRECTORY_MANAGEMENT_PAGE,
     MobileViewConfigError,
+    empty_directory_page,
     is_mobile_read_only,
     load_mobile_plan,
     load_mobile_trades,
@@ -118,6 +133,51 @@ try:
 except MobileViewConfigError as exc:
     st.error(f"手机只读配置错误：{exc}")
     st.stop()
+
+
+DIRECTORY_STATE_FALLBACK_PATH = Path(__file__).with_name("mobile") / "instrument_directory.json"
+
+
+def _secret_text(name: str) -> str:
+    try:
+        return str(st.secrets.get(name, "")).strip()
+    except Exception:
+        return ""
+
+
+def _load_directory_fallback() -> dict:
+    try:
+        with open(DIRECTORY_STATE_FALLBACK_PATH, "r", encoding="utf-8") as fh:
+            return normalize_directory_state(json.load(fh))
+    except Exception:
+        return empty_directory_state()
+
+
+def _load_shared_directory() -> tuple[dict, DirectorySnapshot | None, GitHubDirectoryStore, str | None]:
+    store = GitHubDirectoryStore(_secret_text("DIRECTORY_GITHUB_TOKEN"))
+    try:
+        snapshot = store.read()
+        return snapshot.state, snapshot, store, None
+    except DirectoryRemoteError as exc:
+        return _load_directory_fallback(), None, store, str(exc)
+
+
+def _save_directory_change(
+    snapshot: DirectorySnapshot | None,
+    store: GitHubDirectoryStore,
+    state: dict,
+    message: str,
+) -> None:
+    if snapshot is None:
+        st.error("共享目录暂不可写入；请检查网络后刷新页面重试。")
+        return
+    try:
+        store.write(snapshot, state, message)
+    except DirectoryRemoteError as exc:
+        st.error(f"目录同步失败：{exc}")
+        return
+    st.session_state.directory_notice = "目录已同步；另一端刷新页面即可看到更新。"
+    st.rerun()
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -217,12 +277,157 @@ def _render_all_charts(specs, refresh_token: int) -> None:
                 progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
 
 
+def _render_directory_actions(
+    symbol: str,
+    visible_symbols: set[str],
+    directory_state: dict,
+    directory_snapshot: DirectorySnapshot | None,
+    directory_store: GitHubDirectoryStore,
+    can_manage: bool,
+) -> None:
+    """Render add/delete controls inside a single-instrument chart page."""
+    st.divider()
+    st.subheader("标的目录")
+    if not can_manage:
+        st.caption("手机端目录管理未解锁；输入管理口令后可加入或删除标的。")
+        return
+    if directory_snapshot is None:
+        st.warning("共享目录暂不可用，当前仅显示上次成功同步的目录。")
+        return
+    if symbol not in visible_symbols:
+        if symbol in set(directory_state.get("hidden_symbols", [])):
+            if st.button("恢复标的", key=f"directory-restore-current-{symbol}"):
+                _save_directory_change(
+                    directory_snapshot,
+                    directory_store,
+                    restore_instrument(directory_state, symbol),
+                    f"directory: restore {symbol}",
+                )
+            st.caption("该标的已从目录隐藏；恢复后会重新出现在已有标的和全部图表中。")
+            return
+        if st.button("加入标的", key=f"directory-add-{symbol}"):
+            try:
+                updated = add_custom_instrument(directory_state, symbol)
+            except ValueError as exc:
+                st.warning(str(exc))
+            else:
+                _save_directory_change(
+                    directory_snapshot,
+                    directory_store,
+                    updated,
+                    f"directory: add {symbol}",
+                )
+        st.caption("加入后作为“自定义观察”显示，不进入买入计划、核心策略或回测。")
+        return
+
+    confirming = st.session_state.get("directory_delete_confirm_symbol") == symbol
+    if not confirming:
+        if st.button("删除标的", key=f"directory-delete-{symbol}"):
+            st.session_state.directory_delete_confirm_symbol = symbol
+            st.rerun()
+        st.caption("删除仅从个人目录隐藏，可在“管理目录”页恢复。")
+        return
+
+    st.warning(f"确认从目录隐藏 {symbol}？这不会删除交易记录、行情缓存或策略定义。")
+    confirm, cancel = st.columns(2)
+    with confirm:
+        if st.button("确认删除", type="primary", key=f"directory-confirm-delete-{symbol}"):
+            _save_directory_change(
+                directory_snapshot,
+                directory_store,
+                hide_instrument(directory_state, symbol),
+                f"directory: hide {symbol}",
+            )
+    with cancel:
+        if st.button("取消", key=f"directory-cancel-delete-{symbol}"):
+            st.session_state.pop("directory_delete_confirm_symbol", None)
+            st.rerun()
+
+
+def _directory_label(symbol: str, directory_state: dict) -> str:
+    custom_names = {
+        entry["symbol"]: entry["name"]
+        for entry in directory_state.get("custom_instruments", [])
+    }
+    try:
+        return get_instrument(symbol).name
+    except ValueError:
+        return custom_names.get(symbol, f"{symbol} · 自定义观察")
+
+
+def _render_directory_manager(
+    directory_state: dict,
+    directory_snapshot: DirectorySnapshot | None,
+    directory_store: GitHubDirectoryStore,
+    can_manage: bool,
+) -> None:
+    st.title("管理目录")
+    st.caption("删除的标的保留在这里，可逐个恢复；“恢复默认目录”会清空自定义观察和隐藏状态。")
+    if not can_manage:
+        st.info("手机端请输入管理口令后，才可恢复或重置目录。")
+        return
+    if directory_snapshot is None:
+        st.warning("共享目录暂不可用，无法安全修改。请检查网络后刷新重试。")
+        return
+
+    hidden_symbols = directory_state.get("hidden_symbols", [])
+    if hidden_symbols:
+        st.subheader("已隐藏标的")
+        for hidden_symbol in hidden_symbols:
+            name_col, action_col = st.columns([4, 1])
+            with name_col:
+                st.write(f"{_directory_label(hidden_symbol, directory_state)}（{hidden_symbol}）")
+            with action_col:
+                if st.button("恢复", key=f"directory-restore-{hidden_symbol}"):
+                    _save_directory_change(
+                        directory_snapshot,
+                        directory_store,
+                        restore_instrument(directory_state, hidden_symbol),
+                        f"directory: restore {hidden_symbol}",
+                    )
+    else:
+        st.caption("目前没有隐藏标的。")
+
+    custom_items = directory_state.get("custom_instruments", [])
+    st.subheader("自定义观察")
+    if custom_items:
+        for entry in custom_items:
+            st.caption(f"{entry['name']}（{entry['symbol']}）")
+    else:
+        st.caption("目前没有自行加入的标的。")
+
+    st.divider()
+    if st.session_state.get("directory_reset_confirm"):
+        st.warning("确认恢复默认目录？自行加入的标的和全部隐藏状态都会移除。")
+        confirm, cancel = st.columns(2)
+        with confirm:
+            if st.button("确认恢复默认", type="primary", key="directory-confirm-reset"):
+                _save_directory_change(
+                    directory_snapshot,
+                    directory_store,
+                    reset_directory_state(),
+                    "directory: reset defaults",
+                )
+        with cancel:
+            if st.button("取消", key="directory-cancel-reset"):
+                st.session_state.pop("directory_reset_confirm", None)
+                st.rerun()
+    elif st.button("恢复默认目录", key="directory-reset"):
+        st.session_state.directory_reset_confirm = True
+        st.rerun()
+
+
 def _render_main(
     df: pd.DataFrame,
     spec,
     trades: list[dict] | None,
     refresh_token: int = 0,
     read_only: bool = False,
+    directory_state: dict | None = None,
+    directory_snapshot: DirectorySnapshot | None = None,
+    directory_store: GitHubDirectoryStore | None = None,
+    visible_symbols: set[str] | None = None,
+    can_manage_directory: bool = False,
 ) -> None:
     latest = df.iloc[-1]
     analysis = build_market_analysis(df)
@@ -317,6 +522,16 @@ def _render_main(
                 st.caption(f"• {item}")
         if not spec.is_core:
             st.info("本标的是实验观察区：指标仅供查看，未验证 RSI 战役或回测规则。")
+
+    if directory_state is not None and directory_store is not None and visible_symbols is not None:
+        _render_directory_actions(
+            spec.symbol,
+            visible_symbols,
+            directory_state,
+            directory_snapshot,
+            directory_store,
+            can_manage_directory,
+        )
 
 
 def _render_journal(df: pd.DataFrame, spec) -> None:
@@ -854,12 +1069,19 @@ def _render_portfolio_review(plan: dict, trade_cache: dict, refresh_token: int) 
 if "refresh_token" not in st.session_state:
     st.session_state.refresh_token = 0
 
-specs = list_instruments(include_experimental=True)
+directory_state, directory_snapshot, directory_store, directory_load_error = _load_shared_directory()
+specs = apply_directory_state(list_instruments(include_experimental=True), directory_state)
 spec_by_symbol = {spec.symbol: spec for spec in specs}
-if "active_symbol" not in st.session_state:
+if spec_by_symbol and ("active_symbol" not in st.session_state or st.session_state.active_symbol not in spec_by_symbol):
     st.session_state.active_symbol = next(iter(spec_by_symbol))
+elif not spec_by_symbol:
+    st.session_state.pop("active_symbol", None)
+if "directory_admin_unlocked" not in st.session_state:
+    st.session_state.directory_admin_unlocked = False
 with st.sidebar:
     st.markdown("## 决策辅助")
+    if st.session_state.get("directory_notice"):
+        st.success(st.session_state.pop("directory_notice"))
     symbol_options = list(spec_by_symbol)
     with st.form("symbol-search"):
         custom_code = st.text_input("输入股票 / ETF 代码", placeholder="例如 600887 或 561380").strip().upper()
@@ -882,29 +1104,54 @@ with st.sidebar:
             st.session_state.symbol_search_error = str(exc)
     if st.session_state.get("symbol_search_error"):
         st.error(st.session_state.symbol_search_error)
-    symbol = st.session_state.active_symbol
+    symbol = st.session_state.get("active_symbol", "")
+    directory_management_unlocked = not MOBILE_READ_ONLY or st.session_state.directory_admin_unlocked
     if MOBILE_READ_ONLY:
+        if not directory_management_unlocked:
+            st.caption("目录管理需解锁；看图和搜索不受影响。")
+            with st.form("directory-admin-unlock"):
+                entered_pin = st.text_input("目录管理口令", type="password")
+                unlock_submitted = st.form_submit_button("解锁目录管理")
+            if unlock_submitted:
+                if directory_admin_pin_matches(entered_pin, {"DIRECTORY_ADMIN_PIN": _secret_text("DIRECTORY_ADMIN_PIN")}):
+                    st.session_state.directory_admin_unlocked = True
+                    directory_management_unlocked = True
+                    st.rerun()
+                else:
+                    st.error("管理口令不正确，或云端尚未配置 DIRECTORY_ADMIN_PIN。")
+        else:
+            st.caption("目录管理已解锁（本次会话）。")
         if st.button("浏览全部已有标的"):
             st.session_state.mobile_page = ALL_CHARTS_PAGE
-        page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY), key="mobile_page")
+        mobile_pages = mobile_page_options(MOBILE_READ_ONLY, directory_management_unlocked)
+        if st.session_state.get("mobile_page") not in mobile_pages:
+            st.session_state.mobile_page = mobile_pages[0]
+        page = st.radio("页面", mobile_pages, key="mobile_page")
     else:
         page = st.radio("页面", mobile_page_options(MOBILE_READ_ONLY))
+    recovery_page = empty_directory_page(page, MOBILE_READ_ONLY, directory_management_unlocked)
+    if not spec_by_symbol and recovery_page is not None:
+        page = recovery_page
     refresh_label = "刷新全部图表数据" if page == ALL_CHARTS_PAGE else "刷新当前数据"
     if st.button(refresh_label):
         st.session_state.refresh_token += 1
+        st.rerun()
     show_trades = False
-    if page != ALL_CHARTS_PAGE:
+    if page not in {ALL_CHARTS_PAGE, DIRECTORY_MANAGEMENT_PAGE}:
         show_trades = st.checkbox("显示个人交易记录")
     uploaded_statement = None
     if not MOBILE_READ_ONLY:
         uploaded_statement = st.file_uploader(
             "更新电子对账单（可选）",
             type=["xlsx"],
-            disabled=page == "战略方向" or (not show_trades and page not in {"半年买入计划", "组合复盘"}),
+            disabled=page in {"战略方向", DIRECTORY_MANAGEMENT_PAGE} or (not show_trades and page not in {"半年买入计划", "组合复盘"}),
         )
         st.caption("解析后的记录会跨页面和重启保留；新对账单更新交易与现金，不会覆盖买入计划。")
     else:
         st.caption("手机只读模式 · 不上传对账单，不修改计划")
+
+if directory_load_error:
+    st.caption(f"共享目录暂未联网同步：{directory_load_error}")
 
 if page == "战略方向":
     render_policy_strategy()
@@ -912,6 +1159,15 @@ if page == "战略方向":
 
 if page == "产业RS排名":
     render_sector_rs()
+    st.stop()
+
+if page == DIRECTORY_MANAGEMENT_PAGE:
+    _render_directory_manager(
+        directory_state,
+        directory_snapshot,
+        directory_store,
+        directory_management_unlocked,
+    )
     st.stop()
 
 if MOBILE_READ_ONLY and page == ALL_CHARTS_PAGE:
@@ -1023,6 +1279,9 @@ elif page == "组合复盘":
         save_purchase_plan(reconciled_plan)
     _render_portfolio_review(reconciled_plan, trade_cache, st.session_state.refresh_token)
 else:
+    if not spec_by_symbol:
+        st.info("当前目录为空；请在“管理目录”页恢复标的后再查看图表。")
+        st.stop()
     try:
         df = load_prepared_data(symbol, st.session_state.refresh_token)
     except Exception as exc:
@@ -1037,6 +1296,11 @@ else:
             trades,
             st.session_state.refresh_token,
             read_only=MOBILE_READ_ONLY,
+            directory_state=directory_state,
+            directory_snapshot=directory_snapshot,
+            directory_store=directory_store,
+            visible_symbols=set(spec_by_symbol),
+            can_manage_directory=directory_management_unlocked,
         )
     elif page == "复盘日志":
         _render_journal(df, spec)

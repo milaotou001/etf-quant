@@ -84,6 +84,7 @@ class PolicyPageTests(unittest.TestCase):
                 "组合复盘",
                 "战略方向",
                 "产业RS排名",
+                "管理目录",
             ],
         )
         self.assertIn("mobile_page_options(MOBILE_READ_ONLY)", source)
@@ -91,6 +92,12 @@ class PolicyPageTests(unittest.TestCase):
         strategy_route = source.index('if page == "战略方向":')
         market_load = source.index("df = load_prepared_data", strategy_route)
         self.assertLess(strategy_route, market_load)
+        self.assertIn("if page == DIRECTORY_MANAGEMENT_PAGE:", source)
+        directory_route = source.index("if page == DIRECTORY_MANAGEMENT_PAGE:")
+        self.assertLess(directory_route, market_load)
+        empty_directory_guard = source.index("当前目录为空；请在“管理目录”页恢复标的后再查看图表。")
+        plan_route = source.index('if page == "半年买入计划"')
+        self.assertGreater(empty_directory_guard, plan_route)
 
     def test_portfolio_review_explains_risk_in_plain_language(self):
         source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")

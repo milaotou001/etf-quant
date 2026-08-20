@@ -98,11 +98,27 @@ class MobileAppModeTests(unittest.TestCase):
         self.assertIn('st.warning(f"{chart_spec.name} 行情暂不可用：{exc}")', section)
         self.assertIn("continue", section)
 
+    def test_all_charts_treats_card_rendering_as_part_of_each_symbol_boundary(self):
+        start = self.source.index("def _render_all_charts(")
+        end = self.source.index("\n\ndef ", start + 1)
+        section = self.source[start:end]
+        try_start = section.index("try:")
+        render_start = section.index("_render_all_chart_card(chart_df, chart_spec, range_label)")
+        except_start = section.index("except Exception as exc:")
+        self.assertLess(try_start, render_start)
+        self.assertLess(render_start, except_start)
+
     def test_all_charts_omits_personal_trade_markers(self):
         start = self.source.index("def _render_all_chart_card(")
         end = self.source.index("\n\ndef ", start + 1)
         section = self.source[start:end]
         self.assertIn("trades=None", section)
+
+    def test_all_charts_releases_each_rendered_matplotlib_figure(self):
+        start = self.source.index("def _render_all_chart_card(")
+        end = self.source.index("\n\ndef ", start + 1)
+        section = self.source[start:end]
+        self.assertIn("plt.close(fig)", section)
 
     def test_refresh_label_tracks_the_selected_page(self):
         self.assertIn(

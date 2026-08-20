@@ -5,6 +5,7 @@ import html
 import json
 import os
 from pathlib import Path
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
@@ -174,15 +175,20 @@ def _render_all_chart_card(df: pd.DataFrame, spec, range_label: str) -> None:
         st.metric("成交额 RVOL", _fmt_number(latest.get("rvol"), 2, "不可用"))
 
     start_date = resolve_chart_start(df.index, range_label)
-    fig = build_figure(
-        df,
-        symbol=spec.symbol,
-        name=spec.name,
-        start_date=start_date,
-        end_date=df.index[-1],
-        trades=None,
-    )
-    st.pyplot(fig, clear_figure=True)
+    fig = None
+    try:
+        fig = build_figure(
+            df,
+            symbol=spec.symbol,
+            name=spec.name,
+            start_date=start_date,
+            end_date=df.index[-1],
+            trades=None,
+        )
+        st.pyplot(fig, clear_figure=True)
+    finally:
+        if fig is not None:
+            plt.close(fig)
 
 
 def _render_all_charts(specs, refresh_token: int) -> None:
@@ -203,12 +209,12 @@ def _render_all_charts(specs, refresh_token: int) -> None:
             st.subheader(f"{chart_spec.display_tier} · {chart_spec.name}")
             try:
                 chart_df = load_prepared_data(chart_spec.symbol, refresh_token)
+                _render_all_chart_card(chart_df, chart_spec, range_label)
             except Exception as exc:
                 st.warning(f"{chart_spec.name} 行情暂不可用：{exc}")
-                progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
                 continue
-            _render_all_chart_card(chart_df, chart_spec, range_label)
-        progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
+            finally:
+                progress.progress(position / len(specs), text=f"已处理 {position}/{len(specs)} 个标的")
 
 
 def _render_main(

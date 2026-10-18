@@ -139,6 +139,11 @@ class MobileAppModeTests(unittest.TestCase):
         section = self.source[start:end]
         self.assertIn("plt.close(fig)", section)
 
+    def test_charts_are_embedded_inline_instead_of_served_from_media_endpoint(self):
+        self.assertNotIn("st.pyplot(", self.source)
+        self.assertIn("figure_to_data_uri", self.source)
+        self.assertIn("st.image(figure_to_data_uri(fig, dpi=dpi), width=\"stretch\")", self.source)
+
     def test_refresh_label_tracks_the_selected_page(self):
         self.assertIn(
             'refresh_label = "刷新全部图表数据" if page == ALL_CHARTS_PAGE else "刷新当前数据"',

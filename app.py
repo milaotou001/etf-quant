@@ -18,7 +18,7 @@ for _mod in ("dashboard", "instruments", "instrument_directory", "data", "mobile
     _sys.modules.pop(_mod, None)
 del _sys, _mod
 from backtest import run_campaign_backtest, simulate_campaigns
-from chart import build_figure, resolve_chart_start
+from chart import build_figure, figure_to_data_uri, resolve_chart_start
 from dashboard import (
     _reminders,
     build_market_analysis,
@@ -227,6 +227,14 @@ def _data_caption(df: pd.DataFrame) -> str:
 CHART_RANGE_OPTIONS = ["近 6 个月", "近 1 年", "近 2 年", "从诞生至今"]
 
 
+def _show_figure(fig, dpi: int = 150) -> None:
+    """以内嵌 data URI 显示图表，避开云端私有应用的 /media 鉴权问题。"""
+    try:
+        st.image(figure_to_data_uri(fig, dpi=dpi), width="stretch")
+    finally:
+        plt.close(fig)
+
+
 def _render_all_chart_card(df: pd.DataFrame, spec, range_label: str) -> None:
     """Render the compact, fact-only chart card used by mobile all-chart browsing."""
     latest = df.iloc[-1]
@@ -254,7 +262,7 @@ def _render_all_chart_card(df: pd.DataFrame, spec, range_label: str) -> None:
             end_date=df.index[-1],
             trades=None,
         )
-        st.pyplot(fig, clear_figure=True)
+        _show_figure(fig, dpi=100)
     finally:
         if fig is not None:
             plt.close(fig)
@@ -508,7 +516,7 @@ def _render_main(
     range_label = st.radio("图表区间", CHART_RANGE_OPTIONS, horizontal=True, label_visibility="collapsed")
     start_date = resolve_chart_start(df.index, range_label)
     fig = build_figure(df, symbol=spec.symbol, name=_custom_display_name(spec), start_date=start_date, end_date=df.index[-1], trades=trades)
-    st.pyplot(fig, clear_figure=True)
+    _show_figure(fig)
 
     metric_columns = dict(zip(primary_metric_order(read_only), st.columns(4)))
     with metric_columns["rsi"]:

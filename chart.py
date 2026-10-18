@@ -1,4 +1,6 @@
 """K线图绘制 — 标注关键位置，不标注买卖箭头"""
+import base64
+import io
 import os
 import pandas as pd
 import numpy as np
@@ -24,6 +26,18 @@ def resolve_chart_start(index, range_label: str):
     except KeyError as exc:
         raise ValueError(f"未知图表区间：{range_label}") from exc
     return index[-1] - pd.Timedelta(days=days)
+
+
+def figure_to_data_uri(fig, dpi: int = 150) -> str:
+    """把 matplotlib 图转成内嵌 PNG data URI。
+
+    云端私有应用对 /media 图片端点可能返回登录重定向，浏览器取不到图片时
+    会显示破图；data URI 随页面内容一起下发，不再产生额外请求。
+    """
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", dpi=dpi, bbox_inches="tight")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def build_figure(df, symbol="563360", name=None, days=90, start_date=None, end_date=None, trades=None):

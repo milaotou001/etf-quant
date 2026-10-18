@@ -224,7 +224,7 @@ def _data_caption(df: pd.DataFrame) -> str:
     return f"数据日 {latest_date} · {source}{origin_note} · {freshness} · {quality}"
 
 
-CHART_RANGE_OPTIONS = ["近 6 个月", "近 1 年", "近 2 年", "从诞生至今"]
+CHART_RANGE_OPTIONS = ["近 6 个月", "近 1 年", "近 2 年", "近 3 年", "近 5 年", "从诞生至今"]
 
 
 def _show_figure(fig, dpi: int = 150) -> None:

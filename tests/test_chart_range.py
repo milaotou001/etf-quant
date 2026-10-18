@@ -2,6 +2,7 @@ import base64
 import os
 import sys
 import unittest
+from pathlib import Path
 
 import pandas as pd
 from matplotlib.figure import Figure
@@ -22,6 +23,17 @@ class ChartRangeTests(unittest.TestCase):
 
     def test_recent_range_uses_last_date_as_anchor(self):
         self.assertEqual(resolve_chart_start(self.index, "近 6 个月"), self.index[-1] - pd.Timedelta(days=183))
+
+    def test_three_year_range_uses_last_date_as_anchor(self):
+        self.assertEqual(resolve_chart_start(self.index, "近 3 年"), self.index[-1] - pd.Timedelta(days=1095))
+
+    def test_five_year_range_uses_last_date_as_anchor(self):
+        self.assertEqual(resolve_chart_start(self.index, "近 5 年"), self.index[-1] - pd.Timedelta(days=1825))
+
+    def test_app_exposes_three_and_five_year_options(self):
+        source = Path(PROJECT_ROOT, "app.py").read_text(encoding="utf-8")
+        self.assertIn('"近 3 年"', source)
+        self.assertIn('"近 5 年"', source)
 
 
 class FigureDataUriTests(unittest.TestCase):

@@ -20,7 +20,7 @@ def resolve_chart_start(index, range_label: str):
         raise ValueError("没有可用于绘图的数据")
     if range_label == "从诞生至今":
         return index[0]
-    days_by_label = {"近 6 个月": 183, "近 1 年": 365, "近 2 年": 730}
+    days_by_label = {"近 6 个月": 183, "近 1 年": 365, "近 2 年": 730, "近 3 年": 1095, "近 5 年": 1825}
     try:
         days = days_by_label[range_label]
     except KeyError as exc:
